@@ -2,7 +2,7 @@ const { createClient } = supabase;
 
 const supabaseClient = createClient(
   "https://kbbdsywnixtfmxrtwcus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
+  "sb_publishable_yWSzqXZfgSSMPgTAntPdug_sCDHXl7B"
 );
 
 // LOGIN CHECK
