@@ -2,20 +2,183 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Login</title>
+<title>Lista Comenzi</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="style.css">
-</head>
-<body>
 
-<div class="header">Sistem Comenzi</div>
+<style>
+.topbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#1e3a8a;
+  color:white;
+  padding:15px 30px;
+}
+
+.logo {
+  font-size:20px;
+  font-weight:bold;
+}
+
+.filter-bar {
+  margin:20px 0;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+select, input {
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+th {
+  background:#1e3a8a;
+  color:white;
+  padding:10px;
+}
+
+td {
+  padding:10px;
+  border-bottom:1px solid #eee;
+}
+
+.status {
+  padding:5px 10px;
+  border-radius:6px;
+  color:white;
+  font-size:12px;
+}
+
+.status.Noua { background:#f59e0b; }
+.status["In Progress"] { background:#3b82f6; }
+.status.Done { background:#16a34a; }
+
+.download-btn {
+  background:#16a34a;
+  color:white;
+  padding:5px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.download-btn:hover {
+  opacity:0.8;
+}
+</style>
+</head>
+
+<body onload="checkUser(); loadOrders();">
+
+<div class="topbar">
+  <div class="logo">📦 Sistem Comenzi</div>
+  <button onclick="location.href='dashboard.html'">⬅ Înapoi</button>
+</div>
 
 <div class="container">
-  <input type="email" id="email" placeholder="Email"><br>
-  <input type="password" id="password" placeholder="Parola"><br>
-  <button onclick="login()">Login</button>
+
+<div class="filter-bar">
+  <input type="text" id="search" placeholder="Caută client/produs" onkeyup="filterOrders()">
+  <select id="statusFilter" onchange="filterOrders()">
+    <option value="">Toate</option>
+    <option value="Noua">Noua</option>
+    <option value="In Progress">In Progress</option>
+    <option value="Done">Done</option>
+  </select>
+</div>
+
+<div id="lista"></div>
+
 </div>
 
 <script src="app.js"></script>
+
+<script>
+
+let allOrders = [];
+
+async function loadOrders() {
+  const { data } = await supabaseClient
+    .from("comenzi")
+    .select("*")
+    .order("data_comanda", { ascending: false });
+
+  allOrders = data;
+  renderOrders(data);
+}
+
+function formatDate(dateString) {
+  const d = new Date(dateString);
+  return d.toLocaleString("ro-RO");
+}
+
+function renderOrders(data) {
+
+  let html = `
+  <table>
+    <tr>
+      <th>Data</th>
+      <th>Client</th>
+      <th>Produs</th>
+      <th>Cantitate</th>
+      <th>Status</th>
+      <th>Fișier</th>
+    </tr>`;
+
+  data.forEach(c => {
+
+    html += `
+      <tr>
+        <td>${formatDate(c.data_comanda)}</td>
+        <td>${c.client}</td>
+        <td>${c.produs}</td>
+        <td>${c.cantitate}</td>
+        <td><span class="status ${c.status || 'Noua'}">${c.status || 'Noua'}</span></td>
+        <td>
+          ${c.file_url 
+            ? `<button class="download-btn" onclick="window.open('${c.file_url}','_blank')">Descarcă</button>` 
+            : '-'}
+        </td>
+      </tr>`;
+  });
+
+  html += "</table>";
+
+  document.getElementById("lista").innerHTML = html;
+}
+
+function filterOrders() {
+
+  const search = document.getElementById("search").value.toLowerCase();
+  const status = document.getElementById("statusFilter").value;
+
+  let filtered = allOrders.filter(o => {
+
+    const matchSearch =
+      o.client.toLowerCase().includes(search) ||
+      o.produs.toLowerCase().includes(search);
+
+    const matchStatus =
+      !status || o.status === status;
+
+    return matchSearch && matchStatus;
+  });
+
+  renderOrders(filtered);
+}
+
+</script>
+
 </body>
 </html>
