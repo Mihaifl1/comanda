@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body onload="checkUser()">
+
+<div class="header">Dashboard Comenzi</div>
+
+<div class="container">
+
+  <div class="card" onclick="location.href='add.html'">
+    ➕ Adaugă Comandă
+  </div>
+
+  <div class="card" onclick="location.href='list.html'">
+    📋 Vezi Comenzi
+  </div>
+
+  <br><br>
+  <button onclick="logout()">Logout</button>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
