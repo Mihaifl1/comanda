@@ -2,7 +2,7 @@ const { createClient } = supabase;
 
 const supabaseClient = createClient(
   "https://kbbdsywnixtfmxrtwcus.supabase.co",
-  "ANON_PUBLIC_KEY_AICI"
+  "sb_publishable_yWSzqXZfgSSMPgTAntPdug_sCDHXl7BI"
 );
 
 // LOGIN CHECK
