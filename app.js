@@ -45,47 +45,50 @@ async function saveOrder() {
   const client = document.getElementById("client").value;
   const produs = document.getElementById("produs").value;
   const cantitate = document.getElementById("cantitate").value;
-  const file = document.getElementById("file")?.files[0];
+  const fileInput = document.getElementById("file");
 
-  let file_url = null;
+  let fileUrl = null;
 
-  // UPLOAD FIȘIER
-  if (file) {
+  // 🔹 Dacă există fișier
+  if (fileInput.files.length > 0) {
 
+    const file = fileInput.files[0];
     const fileName = Date.now() + "_" + file.name;
 
+    // Upload în bucket "comenzi"
     const { error: uploadError } = await supabaseClient
       .storage
       .from("comenzi")
       .upload(fileName, file);
 
     if (uploadError) {
-      alert("Eroare upload fișier!");
+      alert("Eroare upload fișier");
+      console.error(uploadError);
       return;
     }
 
+    // Obține URL public
     const { data } = supabaseClient
       .storage
       .from("comenzi")
       .getPublicUrl(fileName);
 
-    file_url = data.publicUrl;
+    fileUrl = data.publicUrl;
   }
 
-  // SALVARE ÎN DB
+  // 🔹 Inserare în tabel
   const { error } = await supabaseClient
     .from("comenzi")
     .insert([{
       client,
       produs,
       cantitate,
-      file_url,
-      data_comanda: new Date(),
-      status: "Noua"
+      file_url: fileUrl
     }]);
 
   if (error) {
     alert("Eroare salvare comandă");
+    console.error(error);
   } else {
     alert("Comandă salvată!");
     window.location.href = "list.html";
