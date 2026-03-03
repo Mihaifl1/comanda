@@ -3,143 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <title>Sistem Comenzi</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="style.css">
+
 <style>
-body { font-family: Arial; background:#f4f4f4; text-align:center; }
-.box { background:white; padding:20px; margin:20px auto; width:400px; border-radius:10px; }
-input { width:90%; padding:8px; margin:5px; }
-button { padding:10px 20px; background:#4CAF50; color:white; border:none; }
-.hidden { display:none; }
+body {
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#f4f6f9;
+}
+
+.header {
+  background:#1e3a8a;
+  color:white;
+  padding:20px;
+  text-align:center;
+  font-size:22px;
+  font-weight:bold;
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+
+.container {
+  padding:40px;
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap:30px;
+  max-width:900px;
+  margin:auto;
+}
+
+.card {
+  background:white;
+  padding:30px;
+  border-radius:12px;
+  text-align:center;
+  box-shadow:0 6px 15px rgba(0,0,0,0.08);
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.card:hover {
+  transform:translateY(-5px);
+}
+
+.icon {
+  font-size:40px;
+  margin-bottom:15px;
+}
+
+.logout {
+  margin-top:40px;
+  text-align:center;
+}
+
+.logout button {
+  background:#dc2626;
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.logout button:hover {
+  opacity:0.8;
+}
 </style>
 </head>
-<body>
-<h2>Gestione Comenzi</h2>
 
-<div id="loginBox" class="box">
-<h2>Login</h2>
-<input type="email" id="email" placeholder="Email"><br>
-<input type="password" id="password" placeholder="Parola"><br>
-<button onclick="login()">Login</button>
-<div class="card">
-  <a href="add.html">➕ Adaugă Comandă</a>
+<body onload="checkUser()">
+
+<div class="header">
+  📦 Sistem Comenzi
 </div>
 
-<div id="appBox" class="box hidden">
-<h2>Sistem Comenzi</h2>
-<button onclick="logout()">Logout</button><br><br>
+<div class="container">
 
-<input type="text" id="client" placeholder="Client"><br>
-<input type="text" id="produs" placeholder="Produs"><br>
-<input type="number" id="cantitate" placeholder="Cantitate"><br>
-<input type="file" id="file"><br><br>
-<button onclick="salveaza()">Salveaza Comanda</button>
+  <div class="card" onclick="location.href='comanda.html'">
+    <div class="icon">➕</div>
+    <h3>Comandă Nouă</h3>
+    <p>Adaugă o comandă nouă</p>
+  </div>
 
-<h3>Lista Comenzi</h3>
-<div id="lista"></div>
-<div class="card">
-  <a href="list.html">📋 Vezi Toate Comenzile</a>
+  <div class="card" onclick="location.href='list.html'">
+    <div class="icon">📋</div>
+    <h3>Lista Comenzi</h3>
+    <p>Vezi toate comenzile</p>
+  </div>
+
+  <div class="card" onclick="location.href='status.html'">
+    <div class="icon">📊</div>
+    <h3>Status Comenzi</h3>
+    <p>Vizualizare progres</p>
+  </div>
+
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<div class="logout">
+  <button onclick="logout()">Logout</button>
+</div>
+
+<script src="app.js"></script>
 
 <script>
-const { createClient } = supabase;
-
-const supabaseClient = createClient(
-  "https://kbbdsywnixtfmxrtwcus.supabase.co",
-  "sb_publishable_yWSzqXZfgSSMPgTAntPdug_sCDHXl7B"
-);
-
-async function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) alert("Login failed");
-  else location.reload();
-}
-
 async function logout() {
   await supabaseClient.auth.signOut();
-  location.reload();
+  window.location.href = "login.html";
 }
-
-async function checkUser() {
-  const { data } = await supabaseClient.auth.getUser();
-
-  if (data.user) {
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("appBox").classList.remove("hidden");
-    loadComenzi();
-  }
-}
-
-async function salveaza() {
-
-  const client = document.getElementById("client").value;
-  const produs = document.getElementById("produs").value;
-  const cantitate = document.getElementById("cantitate").value;
-  const fileInput = document.getElementById("file");
-  let fileUrl = null;
-
-  if (fileInput.files.length > 0) {
-    const file = fileInput.files[0];
-    const fileName = Date.now() + "_" + file.name;
-
-    const { error } = await supabaseClient.storage
-      .from("comenzi")
-      .upload(fileName, file);
-
-    if (error) {
-      alert("Eroare upload");
-      return;
-    }
-
-    const { data } = supabaseClient.storage
-      .from("comenzi")
-      .getPublicUrl(fileName);
-
-    fileUrl = data.publicUrl;
-  }
-
-  const { error } = await supabaseClient
-    .from("comenzi")
-    .insert([{ client, produs, cantitate, status: fileUrl }]);
-
-  if (error) alert("Eroare salvare");
-  else {
-    alert("Salvat!");
-    loadComenzi();
-  }
-}
-
-async function loadComenzi() {
-  const { data } = await supabaseClient
-    .from("comenzi")
-    .select("*")
-    .order("id", { ascending: false });
-
-  let html = "";
-  data.forEach(c => {
-    html += `
-    <div style="border:1px solid #ccc; margin:5px; padding:5px;">
-      <b>${c.client}</b> - ${c.produs} (${c.cantitate})
-      <br>
-      ${c.status ? `<a href="${c.status}" target="_blank">Fisier</a>` : ""}
-    </div>`;
-  });
-
-  document.getElementById("lista").innerHTML = html;
-}
-<div class="card">
-  <a href="status.html">📊 Status Comenzi</a>
-</div>
-
-checkUser();
 </script>
+
 </body>
 </html>
-<button onclick="logout()">Logout</button>
