@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Adaugă Comandă</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body onload="checkUser()">
+
+<div class="header">Adaugă Comandă</div>
+
+<div class="container">
+  <input type="text" id="client" placeholder="Client"><br>
+  <input type="text" id="produs" placeholder="Produs"><br>
+  <input type="number" id="cantitate" placeholder="Cantitate"><br>
+  <button onclick="saveOrder()">Salvează</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
