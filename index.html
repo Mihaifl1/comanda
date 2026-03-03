@@ -1,15 +1,21 @@
-<h2>Gestione Comenzi</h2>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-<div class="card">
-  <a href="add.html">➕ Adaugă Comandă</a>
+<div class="header">Sistem Comenzi</div>
+
+<div class="container">
+  <input type="email" id="email" placeholder="Email"><br>
+  <input type="password" id="password" placeholder="Parola"><br>
+  <button onclick="login()">Login</button>
 </div>
 
-<div class="card">
-  <a href="list.html">📋 Vezi Toate Comenzile</a>
-</div>
-
-<div class="card">
-  <a href="status.html">📊 Status Comenzi</a>
-</div>
-
-<button onclick="logout()">Logout</button>
+<script src="app.js"></script>
+</body>
+</html>
