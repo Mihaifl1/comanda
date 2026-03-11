@@ -215,13 +215,23 @@ html+=`
 <td>${c.cantitate}</td>
 
 <td>
-<span class="status ${normalizeStatus(c.status)}">${c.status}</span>
-<br>
-<select id="status_${c.id}">
-<option value="Noua" ${c.status==="Noua"?"selected":""}>Noua</option>
-<option value="In Progress" ${c.status==="In Progress"?"selected":""}>In Progress</option>
-<option value="Done" ${c.status==="Done"?"selected":""}>Done</option>
+
+<span class="status ${normalizeStatus(c.status)}"
+onclick="editStatus(${c.id},'${c.status}')"
+id="badge_${c.id}">
+${c.status}
+</span>
+
+<select id="status_${c.id}" 
+style="display:none"
+onchange="changeStatus(${c.id})">
+
+<option value="Noua">Noua</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+
 </select>
+
 </td>
 
 <td>
@@ -246,7 +256,36 @@ html+="</table>";
 document.getElementById("lista").innerHTML=html;
 
 }
+function editStatus(id,current){
 
+document.getElementById("badge_"+id).style.display="none";
+
+let select=document.getElementById("status_"+id);
+select.style.display="inline-block";
+select.value=current;
+
+}
+
+async function changeStatus(id){
+
+let status=document.getElementById("status_"+id).value;
+
+const { error } = await supabaseClient
+.from("comenzi")
+.update({ status: status })
+.eq("id",id);
+
+if(error){
+
+alert("Eroare update");
+
+}else{
+
+loadOrders();
+
+}
+
+}
 function filterOrders(){
 
 const search=document.getElementById("search").value.toLowerCase();
