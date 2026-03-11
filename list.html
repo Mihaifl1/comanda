@@ -224,8 +224,7 @@ ${c.status}
 
 <select id="status_${c.id}" 
 style="display:none"
-onchange="changeStatus(${c.id})"
-onblur="loadOrders()">
+onchange="changeStatus(${c.id})">
 
 <option value="Noua">Noua</option>
 <option value="InProgress">InProgress</option>
@@ -264,22 +263,23 @@ const select=document.getElementById("status_"+id);
 
 badge.style.display="none";
 select.style.display="inline-block";
-select.value=current;
 
-select.focus();   // deschide focus
-select.size=3;    // arată lista direct
+select.value=current;   // important
+select.focus();
 
 }
 
 async function changeStatus(id){
 
 const select=document.getElementById("status_"+id);
+const badge=document.getElementById("badge_"+id);
+
 let status=select.value;
 
 const { error } = await supabaseClient
 .from("comenzi")
 .update({ status: status })
-.eq("id", Number(id));   // <- aici
+.eq("id", Number(id));
 
 if(error){
 
@@ -288,7 +288,12 @@ alert("Eroare update");
 
 }else{
 
-loadOrders();
+// actualizeaza badge fara reload
+badge.innerText=status;
+badge.className="status "+normalizeStatus(status);
+
+select.style.display="none";
+badge.style.display="inline-block";
 
 }
 
