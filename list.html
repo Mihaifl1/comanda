@@ -285,7 +285,7 @@ status: status,
 pret: pret
 })
 .match({ id: id })
-
+.select();
 if(error){
 
 console.error(error);
