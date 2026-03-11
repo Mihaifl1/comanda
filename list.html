@@ -279,10 +279,11 @@ let status=select.value;
 const { error } = await supabaseClient
 .from("comenzi")
 .update({ status: status })
-.eq("id", id);
+.eq("id", Number(id));   // <- aici
 
 if(error){
 
+console.error(error);
 alert("Eroare update");
 
 }else{
