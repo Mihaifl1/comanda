@@ -271,18 +271,20 @@ renderOrders(filtered);
 
 async function updateOrder(id){
 
+console.log("CLICK UPDATE",id);
+
 const status=document.getElementById("status_"+id).value;
 let pret=document.getElementById("pret_"+id).value;
 
 if(pret==="") pret=null;
 
-const {data,error}=await supabaseClient
+const { data, error } = await supabaseClient
 .from("comenzi")
 .update({
 status:status,
 pret:pret
 })
-.eq("id",id)
+.eq("id",Number(id))
 .select();
 
 if(error){
