@@ -271,7 +271,7 @@ renderOrders(filtered);
 
 async function updateOrder(id){
 
-console.log("CLICK UPDATE",id);
+console.log("UPDATE",id);
 
 const status=document.getElementById("status_"+id).value;
 let pret=document.getElementById("pret_"+id).value;
@@ -281,20 +281,18 @@ if(pret==="") pret=null;
 const { data, error } = await supabaseClient
 .from("comenzi")
 .update({
-status:status,
-pret:pret
+status: status,
+pret: pret
 })
-.eq("id",Number(id))
-.select();
+.eq("id", id);
 
 if(error){
 
 console.error(error);
-alert("Update DB eșuat");
+alert("Eroare UPDATE");
 
 }else{
 
-console.log("Update OK:",data);
 alert("Salvat!");
 loadOrders();
 
