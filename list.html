@@ -5,214 +5,291 @@
 <title>Lista Comenzi</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="style.css">
 
 <style>
-body {
-  margin:0;
-  font-family:Segoe UI, sans-serif;
-  background:#f1f3f7;
+
+body{
+margin:0;
+font-family:Segoe UI, sans-serif;
+background:#f1f3f7;
 }
 
-.topbar {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:#1e3a8a;
-  color:white;
-  padding:15px 30px;
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:#1e3a8a;
+color:white;
+padding:15px 30px;
 }
 
-.logo {
-  font-weight:bold;
-  font-size:18px;
+.logo{
+font-weight:bold;
+font-size:18px;
 }
 
-.back-btn {
-  background:white;
-  color:#1e3a8a;
-  border:none;
-  padding:8px 15px;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:600;
+.back-btn{
+background:white;
+color:#1e3a8a;
+border:none;
+padding:8px 15px;
+border-radius:6px;
+cursor:pointer;
+font-weight:600;
 }
 
-.container {
-  padding:30px 60px;
+.container{
+padding:30px 60px;
 }
 
-.filter-bar {
-  margin-bottom:20px;
-  display:flex;
-  gap:15px;
+.filter-bar{
+margin-bottom:20px;
+display:flex;
+gap:15px;
 }
 
-input, select {
-  padding:8px 10px;
-  border-radius:6px;
-  border:1px solid #ccc;
+input,select{
+padding:8px 10px;
+border-radius:6px;
+border:1px solid #ccc;
 }
 
-table {
-  width:100%;
-  border-collapse:collapse;
-  background:white;
-  border-radius:8px;
-  overflow:hidden;
-  box-shadow:0 5px 15px rgba(0,0,0,0.08);
+table{
+width:100%;
+border-collapse:collapse;
+background:white;
+border-radius:8px;
+overflow:hidden;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
 }
 
-th {
-  background:#2c3e90;
-  color:white;
-  padding:14px;
-  text-align:left;
+th{
+background:#2c3e90;
+color:white;
+padding:14px;
+text-align:left;
 }
 
-td {
-  padding:14px;
-  border-bottom:1px solid #eee;
+td{
+padding:14px;
+border-bottom:1px solid #eee;
 }
 
-tr:hover {
-  background:#f8f9fc;
+tr:hover{
+background:#f8f9fc;
 }
 
-.status {
-  padding:6px 12px;
-  border-radius:20px;
-  font-size:12px;
-  font-weight:600;
-  color:white;
+.status{
+padding:6px 12px;
+border-radius:20px;
+font-size:12px;
+font-weight:600;
+color:white;
 }
 
-.status.Noua { background:#f39c12; }
-.status.InProgress { background:#3498db; }
-.status.Done { background:#2ecc71; }
+.status.Noua{background:#f39c12;}
+.status.InProgress{background:#3498db;}
+.status.Done{background:#2ecc71;}
 
-.download-btn {
-  background:#27ae60;
-  color:white;
-  padding:6px 12px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  font-size:12px;
+.save-btn{
+background:#27ae60;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
 }
 
-.download-btn:hover {
-  opacity:0.85;
+.download-btn{
+background:#3498db;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:12px;
 }
+
 </style>
 </head>
 
-<body onload="checkUser(); loadOrders();">
+<body>
 
 <div class="topbar">
-  <div class="logo">📦 Sistem Comenzi</div>
-  <button class="back-btn" onclick="location.href='index.html'">⬅ Înapoi</button>
+<div class="logo">📦 Sistem Comenzi</div>
+<button class="back-btn" onclick="location.href='index.html'">⬅ Înapoi</button>
 </div>
 
 <div class="container">
 
 <div class="filter-bar">
-  <input type="text" id="search" placeholder="Caută client / produs" onkeyup="filterOrders()">
-  <select id="statusFilter" onchange="filterOrders()">
-    <option value="">Toate</option>
-    <option value="Noua">Noua</option>
-    <option value="In Progress">In Progress</option>
-    <option value="Done">Done</option>
-  </select>
+<input type="text" id="search" placeholder="Caută client / produs" onkeyup="filterOrders()">
+
+<select id="statusFilter" onchange="filterOrders()">
+<option value="">Toate</option>
+<option value="Noua">Noua</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+</select>
 </div>
 
 <div id="lista"></div>
 
 </div>
 
-<script src="app.js"></script>
-
 <script>
 
-let allOrders = [];
+const SUPABASE_URL="https://YOUR_PROJECT.supabase.co";
+const SUPABASE_KEY="YOUR_PUBLIC_KEY";
 
-async function loadOrders() {
-  const { data } = await supabaseClient
-    .from("comenzi")
-    .select("*")
-    .order("data_comanda", { ascending: false });
+const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-  allOrders = data;
-  renderOrders(data);
+let allOrders=[];
+
+window.onload=()=>{
+loadOrders();
+};
+
+async function loadOrders(){
+
+const {data,error}=await supabaseClient
+.from("comenzi")
+.select("*")
+.order("data_comanda",{ascending:false});
+
+if(error){
+console.log(error);
+return;
+}
+
+allOrders=data;
+renderOrders(data);
+
 }
 
 function formatDate(dateString){
-  if(!dateString) return "-";
-  return new Date(dateString).toLocaleString("ro-RO");
+
+if(!dateString) return "-";
+
+return new Date(dateString).toLocaleString("ro-RO");
+
 }
 
 function normalizeStatus(status){
-  if(status === "In Progress") return "InProgress";
-  return status || "Noua";
+
+if(status==="In Progress") return "InProgress";
+
+return status || "Noua";
+
 }
 
 function renderOrders(data){
 
-  let html = `
-  <table>
-    <tr>
-      <th>Data</th>
-      <th>Client</th>
-      <th>Produs</th>
-      <th>Cantitate</th>
-      <th>Status</th>
-      <th>Fișier</th>
-    </tr>`;
+let html=`
+<table>
+<tr>
+<th>Data</th>
+<th>Client</th>
+<th>Produs</th>
+<th>Cantitate</th>
+<th>Status</th>
+<th>Pret</th>
+<th>Fisier</th>
+<th>Salveaza</th>
+</tr>
+`;
 
-  data.forEach(c => {
+data.forEach(c=>{
 
-    html += `
-      <tr>
-        <td>${formatDate(c.data_comanda)}</td>
-        <td>${c.client}</td>
-        <td>${c.produs}</td>
-        <td>${c.cantitate}</td>
-        <td>
-          <span class="status ${normalizeStatus(c.status)}">
-            ${c.status || 'Noua'}
-          </span>
-        </td>
-        <td>
-          ${c.file_url 
-            ? `<button class="download-btn" onclick="window.open('${c.file_url}','_blank')">Descarcă</button>` 
-            : '-'}
-        </td>
-      </tr>`;
-  });
+html+=`
+<tr>
 
-  html += "</table>";
+<td>${formatDate(c.data_comanda)}</td>
 
-  document.getElementById("lista").innerHTML = html;
+<td>${c.client}</td>
+
+<td>${c.produs}</td>
+
+<td>${c.cantitate}</td>
+
+<td>
+<select id="status_${c.id}">
+<option value="Noua" ${c.status==="Noua"?"selected":""}>Noua</option>
+<option value="In Progress" ${c.status==="In Progress"?"selected":""}>In Progress</option>
+<option value="Done" ${c.status==="Done"?"selected":""}>Done</option>
+</select>
+</td>
+
+<td>
+<input type="number" id="pret_${c.id}" value="${c.pret || ""}" style="width:90px">
+</td>
+
+<td>
+${c.file_url ? `<button class="download-btn" onclick="window.open('${c.file_url}','_blank')">Descarcă</button>` : "-"}
+</td>
+
+<td>
+<button class="save-btn" onclick="updateOrder(${c.id})">💾</button>
+</td>
+
+</tr>
+`;
+
+});
+
+html+="</table>";
+
+document.getElementById("lista").innerHTML=html;
+
 }
 
 function filterOrders(){
 
-  const search = document.getElementById("search").value.toLowerCase();
-  const status = document.getElementById("statusFilter").value;
+const search=document.getElementById("search").value.toLowerCase();
+const status=document.getElementById("statusFilter").value;
 
-  let filtered = allOrders.filter(o => {
+let filtered=allOrders.filter(o=>{
 
-    const matchSearch =
-      (o.client && o.client.toLowerCase().includes(search)) ||
-      (o.produs && o.produs.toLowerCase().includes(search));
+const matchSearch=
+(o.client && o.client.toLowerCase().includes(search)) ||
+(o.produs && o.produs.toLowerCase().includes(search));
 
-    const matchStatus =
-      !status || o.status === status;
+const matchStatus=
+!status || o.status===status;
 
-    return matchSearch && matchStatus;
-  });
+return matchSearch && matchStatus;
 
-  renderOrders(filtered);
+});
+
+renderOrders(filtered);
+
+}
+
+async function updateOrder(id){
+
+const status=document.getElementById("status_"+id).value;
+const pret=document.getElementById("pret_"+id).value;
+
+const {error}=await supabaseClient
+.from("comenzi")
+.update({
+status:status,
+pret:pret
+})
+.eq("id",id);
+
+if(error){
+
+alert("Eroare salvare");
+console.log(error);
+
+}else{
+
+alert("Salvat!");
+loadOrders();
+
+}
+
 }
 
 </script>
