@@ -324,7 +324,18 @@ async function updateOrder(id){
 
 console.log("UPDATE",id);
 
-const status=document.getElementById("status_"+id).value;
+const select=document.getElementById("status_"+id);
+const badge=document.getElementById("badge_"+id);
+
+let status;
+
+// daca dropdown este deschis
+if(select.style.display==="inline-block"){
+status=select.value;
+}else{
+status=badge.innerText;
+}
+
 let pret=document.getElementById("pret_"+id).value;
 
 if(pret==="") pret=null;
@@ -335,8 +346,9 @@ const { data, error } = await supabaseClient
 status: status,
 pret: pret
 })
-.match({ id: id })
+.eq("id", Number(id))
 .select();
+
 if(error){
 
 console.error(error);
