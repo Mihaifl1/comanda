@@ -224,7 +224,8 @@ ${c.status}
 
 <select id="status_${c.id}" 
 style="display:none"
-onchange="changeStatus(${c.id})">
+onchange="changeStatus(${c.id})"
+onblur="loadOrders()">
 
 <option value="Noua">Noua</option>
 <option value="In Progress">In Progress</option>
@@ -258,22 +259,27 @@ document.getElementById("lista").innerHTML=html;
 }
 function editStatus(id,current){
 
-document.getElementById("badge_"+id).style.display="none";
+const badge=document.getElementById("badge_"+id);
+const select=document.getElementById("status_"+id);
 
-let select=document.getElementById("status_"+id);
+badge.style.display="none";
 select.style.display="inline-block";
 select.value=current;
+
+select.focus();   // deschide focus
+select.size=3;    // arată lista direct
 
 }
 
 async function changeStatus(id){
 
-let status=document.getElementById("status_"+id).value;
+const select=document.getElementById("status_"+id);
+let status=select.value;
 
 const { error } = await supabaseClient
 .from("comenzi")
 .update({ status: status })
-.eq("id",id);
+.eq("id", id);
 
 if(error){
 
