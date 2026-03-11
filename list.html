@@ -213,6 +213,8 @@ html+=`
 <td>${c.cantitate}</td>
 
 <td>
+<span class="status ${normalizeStatus(c.status)}">${c.status}</span>
+<br>
 <select id="status_${c.id}">
 <option value="Noua" ${c.status==="Noua"?"selected":""}>Noua</option>
 <option value="In Progress" ${c.status==="In Progress"?"selected":""}>In Progress</option>
@@ -270,13 +272,14 @@ async function updateOrder(id){
 const status=document.getElementById("status_"+id).value;
 const pret=document.getElementById("pret_"+id).value;
 
-const {error}=await supabaseClient
+const {data,error}=await supabaseClient
 .from("comenzi")
 .update({
 status:status,
 pret:pret
 })
-.eq("id",id);
+.eq("id",id)
+.select();
 
 if(error){
 
@@ -285,6 +288,7 @@ console.log(error);
 
 }else{
 
+console.log(data);
 alert("Salvat!");
 loadOrders();
 
