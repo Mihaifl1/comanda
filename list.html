@@ -284,7 +284,7 @@ const { data, error } = await supabaseClient
 status: status,
 pret: pret
 })
-.eq("id", id);
+.match({ id: id })
 
 if(error){
 
