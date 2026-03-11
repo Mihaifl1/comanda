@@ -128,7 +128,7 @@ font-size:12px;
 <select id="statusFilter" onchange="filterOrders()">
 <option value="">Toate</option>
 <option value="Noua">Noua</option>
-<option value="In Progress">In Progress</option>
+<option value="In Progress">InProgress</option>
 <option value="Done">Done</option>
 </select>
 </div>
@@ -179,7 +179,7 @@ return new Date(date).toLocaleString("ro-RO");
 
 function normalizeStatus(status){
 
-if(status==="In Progress") return "InProgress";
+if(status==="InProgress") return "InProgress";
 
 return status || "Noua";
 
@@ -228,7 +228,7 @@ onchange="changeStatus(${c.id})"
 onblur="loadOrders()">
 
 <option value="Noua">Noua</option>
-<option value="In Progress">In Progress</option>
+<option value="InProgress">InProgress</option>
 <option value="Done">Done</option>
 
 </select>
