@@ -48,7 +48,7 @@ display:flex;
 gap:15px;
 }
 
-input,select{
+input,select,textarea{
 padding:8px 10px;
 border-radius:6px;
 border:1px solid #ccc;
@@ -140,8 +140,7 @@ font-size:12px;
 <script>
 
 const SUPABASE_URL="https://kbbdsywnixtfmxrtwcus.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc";
-
+const SUPABASE_KEY="YOUR_KEY_HERE";
 
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
@@ -170,19 +169,13 @@ renderOrders(data);
 }
 
 function formatDate(date){
-
 if(!date) return "-";
-
 return new Date(date).toLocaleString("ro-RO");
-
 }
 
 function normalizeStatus(status){
-
 if(status==="InProgress") return "InProgress";
-
 return status || "Noua";
-
 }
 
 function renderOrders(data){
@@ -196,6 +189,7 @@ let html=`
 <th>Cantitate</th>
 <th>Status</th>
 <th>Pret</th>
+<th>Coment</th>
 <th>Fisier</th>
 <th>Salveaza</th>
 </tr>
@@ -207,35 +201,31 @@ html+=`
 <tr>
 
 <td>${formatDate(c.data_comanda)}</td>
-
-<td>${c.client}</td>
-
-<td>${c.produs}</td>
-
-<td>${c.cantitate}</td>
+<td>${c.client ?? ""}</td>
+<td>${c.produs ?? ""}</td>
+<td>${c.cantitate ?? ""}</td>
 
 <td>
-
 <span class="status ${normalizeStatus(c.status)}"
 onclick="editStatus(${c.id},'${c.status}')"
 id="badge_${c.id}">
-${c.status}
+${c.status ?? "Noua"}
 </span>
 
-<select id="status_${c.id}" 
-style="display:none"
+<select id="status_${c.id}" style="display:none"
 onchange="changeStatus(${c.id})">
-
 <option value="Noua">Noua</option>
 <option value="InProgress">InProgress</option>
 <option value="Done">Done</option>
-
 </select>
-
 </td>
 
 <td>
 <input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px">
+</td>
+
+<td>
+<textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea>
 </td>
 
 <td>
@@ -256,6 +246,7 @@ html+="</table>";
 document.getElementById("lista").innerHTML=html;
 
 }
+
 function editStatus(id,current){
 
 const badge=document.getElementById("badge_"+id);
@@ -264,7 +255,7 @@ const select=document.getElementById("status_"+id);
 badge.style.display="none";
 select.style.display="inline-block";
 
-select.value=current;   // important
+select.value=current || "Noua";
 select.focus();
 
 }
@@ -282,22 +273,18 @@ const { error } = await supabaseClient
 .eq("id", Number(id));
 
 if(error){
-
 console.error(error);
 alert("Eroare update");
-
 }else{
-
-// actualizeaza badge fara reload
 badge.innerText=status;
 badge.className="status "+normalizeStatus(status);
 
 select.style.display="none";
 badge.style.display="inline-block";
-
 }
 
 }
+
 function filterOrders(){
 
 const search=document.getElementById("search").value.toLowerCase();
@@ -309,8 +296,7 @@ const matchSearch=
 (o.client && o.client.toLowerCase().includes(search)) ||
 (o.produs && o.produs.toLowerCase().includes(search));
 
-const matchStatus=
-!status || o.status===status;
+const matchStatus=!status || o.status===status;
 
 return matchSearch && matchStatus;
 
@@ -322,43 +308,34 @@ renderOrders(filtered);
 
 async function updateOrder(id){
 
-console.log("UPDATE",id);
-
 const select=document.getElementById("status_"+id);
 const badge=document.getElementById("badge_"+id);
 
-let status;
-
-// daca dropdown este deschis
-if(select.style.display==="inline-block"){
-status=select.value;
-}else{
-status=badge.innerText;
-}
+let status = (select.style.display==="inline-block")
+? select.value
+: badge.innerText;
 
 let pret=document.getElementById("pret_"+id).value;
+let coment=document.getElementById("coment_"+id).value;
 
 if(pret==="") pret=null;
+if(coment==="") coment=null;
 
-const { data, error } = await supabaseClient
+const { error } = await supabaseClient
 .from("comenzi")
 .update({
 status: status,
-pret: pret
+pret: pret,
+coment: coment
 })
-.eq("id", Number(id))
-.select();
+.eq("id", Number(id));
 
 if(error){
-
 console.error(error);
 alert("Eroare UPDATE");
-
 }else{
-
 alert("Salvat!");
 loadOrders();
-
 }
 
 }
