@@ -127,7 +127,7 @@ function renderOrders(data){
             <td>${formatDate(c.data_comanda)}</td>
             <td>${c.client ?? ""}</td>
             <td class="product-cell" ondblclick="open3DViewer('${publicUrl || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
-                ${c.produs ?? ""} ${hasFile ? ' 3D' : ''}
+                ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
             </td>
             <td>${c.cantitate ?? ""}</td>
             <td>
