@@ -5,101 +5,25 @@
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body{
-margin:0;
-font-family:Segoe UI,sans-serif;
-background:#f1f3f7;
-}
-.topbar{
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:#1e3a8a;
-color:white;
-padding:15px 30px;
-}
-.logo{
-font-weight:bold;
-font-size:18px;
-}
-.back-btn{
-background:white;
-color:#1e3a8a;
-border:none;
-padding:8px 15px;
-border-radius:6px;
-cursor:pointer;
-font-weight:600;
-}
-.container{
-padding:30px 60px;
-}
-.filter-bar{
-margin-bottom:20px;
-display:flex;
-gap:15px;
-}
-input,select,textarea{
-padding:8px 10px;
-border-radius:6px;
-border:1px solid #ccc;
-}
-table{
-width:100%;
-border-collapse:collapse;
-background:white;
-border-radius:8px;
-overflow:hidden;
-box-shadow:0 5px 15px rgba(0,0,0,0.08);
-}
-th{
-background:#2c3e90;
-color:white;
-padding:14px;
-text-align:left;
-}
-td{
-padding:14px;
-border-bottom:1px solid #eee;
-}
-tr:hover{
-background:#f8f9fc;
-}
-.status{
-padding:6px 12px;
-border-radius:20px;
-font-size:12px;
-font-weight:600;
-color:white;
-}
+body{margin:0;font-family:Segoe UI,sans-serif;background:#f1f3f7;}
+.topbar{display:flex;justify-content:space-between;align-items:center;background:#1e3a8a;color:white;padding:15px 30px;}
+.logo{font-weight:bold;font-size:18px;}
+.back-btn{background:white;color:#1e3a8a;border:none;padding:8px 15px;border-radius:6px;cursor:pointer;font-weight:600;}
+.container{padding:30px 60px;}
+.filter-bar{margin-bottom:20px;display:flex;gap:15px;}
+input,select,textarea{padding:8px 10px;border-radius:6px;border:1px solid #ccc;}
+table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 5px 15px rgba(0,0,0,0.08);}
+th{background:#2c3e90;color:white;padding:14px;text-align:left;}
+td{padding:14px;border-bottom:1px solid #eee;}
+tr:hover{background:#f8f9fc;}
+.status{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;color:white;}
 .status.Noua{background:#f39c12;}
 .status.InProgress{background:#3498db;}
 .status.Done{background:#2ecc71;}
-.save-btn{
-background:#27ae60;
-color:white;
-border:none;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-}
-.download-btn{
-background:#3498db;
-color:white;
-border:none;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-font-size:12px;
-}
-.product-cell{
-cursor:pointer;
-color:#1e40af;
-font-weight:500;
-}
-.product-cell:hover{
-text-decoration:underline;
-}
+.save-btn{background:#27ae60;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
+.download-btn{background:#3498db;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
+.product-cell{cursor:pointer;color:#1e40af;font-weight:500;}
+.product-cell:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -121,30 +45,29 @@ text-decoration:underline;
 </div>
 
 <script>
-const SUPABASE_URL="https://kbbdsywnixtfmxrtwcus.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc";
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let allOrders=[];
+const supabaseClient = supabase.createClient(
+    "https://kbbdsywnixtfmxrtwcus.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
+);
 
-window.onload=()=>{
+let allOrders = [];
+
+window.onload = () => {
     loadOrders();
 };
 
 async function loadOrders(){
-    const {data,error}=await supabaseClient
+    const {data,error} = await supabaseClient
         .from("comenzi")
         .select("*")
         .order("data_comanda",{ascending:false});
-    
+
     if(error){
         console.error(error);
-        alert("Eroare la citirea comenzilor: " + error.message);
-        document.getElementById("lista").innerHTML = `<p style="color:red;padding:20px;">Eroare: ${error.message}</p>`;
+        alert("Eroare la citirea comenzilor");
         return;
     }
-    
     allOrders = data || [];
-    console.log("Date încărcate:", allOrders); // pentru debug
     renderOrders(data);
 }
 
@@ -154,23 +77,28 @@ function formatDate(date){
 }
 
 function normalizeStatus(status){
-    if(status==="InProgress") return "InProgress";
     return status || "Noua";
 }
 
+// Construiește URL-ul public corect
 function getPublicUrl(filePath) {
     if (!filePath) return null;
-    // Curăță dacă este URL complet
-    let path = filePath;
-    if (filePath.includes("/public/")) {
-        path = filePath.split("/public/")[1];
+    // Dacă este deja URL complet, îl folosim direct
+    if (filePath.startsWith("http")) {
+        return filePath;
     }
-    const { data } = supabaseClient.storage.from("comenzi").getPublicUrl(path);
+    const { data } = supabaseClient.storage.from("comenzi").getPublicUrl(filePath);
     return data.publicUrl;
 }
 
+// Construiește link-ul EXACT pentru 3dviewer.net (fără codificare dublă)
+function get3DViewerLink(fileUrl) {
+    if (!fileUrl) return null;
+    return `https://3dviewer.net/#model=${fileUrl}`;
+}
+
 function renderOrders(data){
-    let html=`
+    let html = `
 <table>
 <tr>
 <th>Data</th>
@@ -184,16 +112,17 @@ function renderOrders(data){
 <th>Salveaza</th>
 </tr>
 `;
-    data.forEach(c=>{
+    data.forEach(c => {
         const filePath = c.file_url || c.file_path || '';
         const publicUrl = getPublicUrl(filePath);
+        const viewerLink = get3DViewerLink(publicUrl);
         const hasFile = !!publicUrl;
-        
-        html+=`
+
+        html += `
 <tr>
 <td>${formatDate(c.data_comanda)}</td>
 <td>${c.client ?? ""}</td>
-<td class="product-cell" ondblclick="open3DViewer('${publicUrl || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
+<td class="product-cell" ondblclick="open3DViewer('${viewerLink || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
     ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
 </td>
 <td>${c.cantitate ?? ""}</td>
@@ -225,8 +154,8 @@ ${hasFile ? `<button class="download-btn" onclick="window.open('${publicUrl}','_
 </tr>
 `;
     });
-    html+="</table>";
-    document.getElementById("lista").innerHTML=html;
+    html += "</table>";
+    document.getElementById("lista").innerHTML = html;
 }
 
 /* ==================== FUNCȚIILE TALE ORIGINALE (NESCHIMBATE) ==================== */
@@ -298,14 +227,13 @@ loadOrders();
 }
 }
 
-/* ====================== VIZUALIZARE 3D (cum ai cerut) ====================== */
-function open3DViewer(fileUrl, productName) {
-    if (!fileUrl) {
-        alert("Nu există fișier 3D pentru acest produs!");
+/* ====================== DESCHIDE 3D VIEWER ====================== */
+function open3DViewer(viewerLink, productName) {
+    if (!viewerLink) {
+        alert("Nu există link valid pentru vizualizare 3D!");
         return;
     }
-    const viewerLink = `https://3dviewer.net/#model=${encodeURIComponent(fileUrl)}`;
-    window.open(viewerLink, '_blank');   // se deschide direct în browser
+    window.open(viewerLink, '_blank');
 }
 </script>
 </body>
