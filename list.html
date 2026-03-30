@@ -5,6 +5,10 @@
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- Online 3D Viewer - suport bun pentru STEP -->
+<script src="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.css">
+
 <style>
 body{margin:0;font-family:Segoe UI,sans-serif;background:#f1f3f7;}
 .topbar{display:flex;justify-content:space-between;align-items:center;background:#1e3a8a;color:white;padding:15px 30px;}
@@ -24,7 +28,7 @@ tr:hover{background:#f8f9fc;}
 .save-btn{background:#27ae60;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
 .download-btn{background:#3498db;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
 
-/* Stiluri 3D Viewer */
+/* Stiluri pentru vizualizare 3D */
 .product-cell{cursor:pointer;color:#1e40af;font-weight:500;}
 .product-cell:hover{text-decoration:underline;}
 #viewerModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:10000;display:flex;align-items:center;justify-content:center;}
@@ -32,51 +36,52 @@ tr:hover{background:#f8f9fc;}
 #viewerModal .modal-header{padding:12px 20px;background:#1e3a8a;color:white;display:flex;justify-content:space-between;align-items:center;font-weight:600;}
 #viewerModal .modal-header button{background:none;border:none;color:white;font-size:26px;cursor:pointer;}
 #viewerContainer{flex:1;background:#f0f2f7;position:relative;}
-.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#555;}
+.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#555;font-size:16px;}
 </style>
 </head>
 <body>
 <div class="topbar">
-<div class="logo">📦 Sistem Comenzi</div>
-<button class="back-btn" onclick="location.href='index.html'">⬅ Înapoi</button>
+    <div class="logo">📦 Sistem Comenzi</div>
+    <button class="back-btn" onclick="location.href='index.html'">⬅ Înapoi</button>
 </div>
 <div class="container">
-<div class="filter-bar">
-<input type="text" id="search" placeholder="Caută client / produs" onkeyup="filterOrders()">
-<select id="statusFilter" onchange="filterOrders()">
-<option value="">Toate</option>
-<option value="Noua">Noua</option>
-<option value="InProgress">InProgress</option>
-<option value="Done">Done</option>
-</select>
-</div>
-<div id="lista"></div>
+    <div class="filter-bar">
+        <input type="text" id="search" placeholder="Caută client / produs" onkeyup="filterOrders()">
+        <select id="statusFilter" onchange="filterOrders()">
+            <option value="">Toate</option>
+            <option value="Noua">Noua</option>
+            <option value="InProgress">InProgress</option>
+            <option value="Done">Done</option>
+        </select>
+    </div>
+    <div id="lista"></div>
 </div>
 
 <script>
-// === Librăria 3D Viewer se încarcă aici ===
-const viewerScript = document.createElement('script');
-viewerScript.src = "https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js";
-document.head.appendChild(viewerScript);
+const SUPABASE_URL = "https://kbbdsywnixtfmxrtwcus.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc";
 
-const supabaseClient = supabase.createClient(
-    "https://kbbdsywnixtfmxrtwcus.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
-);
-
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let allOrders = [];
 let currentViewer = null;
+let viewerReady = false;
 
-window.onload = () => {
+// Așteptăm ca librăria 3D să se încarce
+window.addEventListener('load', () => {
+    if (typeof OV !== "undefined") {
+        viewerReady = true;
+    } else {
+        console.log("Aștept încărcarea Online 3D Viewer...");
+    }
     loadOrders();
-};
+});
 
 async function loadOrders(){
     const {data,error} = await supabaseClient
         .from("comenzi")
         .select("*")
         .order("data_comanda", {ascending: false});
-    
+   
     if(error){
         console.error(error);
         alert("Eroare la citirea comenzilor");
@@ -110,7 +115,7 @@ function renderOrders(data){
             <th>Fisier</th>
             <th>Salveaza</th>
         </tr>`;
-    
+   
     data.forEach(c => {
         const hasFile = !!c.file_url;
         html += `
@@ -143,7 +148,7 @@ function renderOrders(data){
     document.getElementById("lista").innerHTML = html;
 }
 
-/* === Funcțiile tale originale (neschimbate) === */
+/* Funcțiile tale originale */
 function editStatus(id, current){
     const badge = document.getElementById("badge_"+id);
     const select = document.getElementById("status_"+id);
@@ -187,27 +192,25 @@ async function updateOrder(id){
     let status = (select.style.display === "inline-block") ? select.value : badge.innerText;
     let pret = document.getElementById("pret_"+id).value || null;
     let coment = document.getElementById("coment_"+id).value || null;
-
     const { error } = await supabaseClient.from("comenzi").update({status, pret, coment}).eq("id", Number(id));
     if(error){
         console.error(error);
         alert("Eroare UPDATE");
     } else {
-        alert("Salvat!");
+        alert("✅ Salvat!");
         loadOrders();
     }
 }
 
-/* ====================== VIZUALIZARE 3D ====================== */
+/* ====================== VIZUALIZARE 3D (STEP) ====================== */
 async function open3DViewer(fileUrl, productName) {
     if (!fileUrl) {
         alert("Nu există fișier atașat acestui produs!");
         return;
     }
 
-    // Verificăm dacă librăria s-a încărcat
-    if (typeof OV === "undefined") {
-        alert("Se încarcă vizualizatorul 3D... Încearcă din nou în câteva secunde.");
+    if (!viewerReady || typeof OV === "undefined") {
+        alert("Vizualizatorul 3D se încarcă... Te rog așteaptă 2-3 secunde și încearcă din nou.");
         return;
     }
 
@@ -219,7 +222,7 @@ async function open3DViewer(fileUrl, productName) {
                 <button onclick="close3DViewer()">✕</button>
             </div>
             <div id="viewerContainer">
-                <div class="loading">Se încarcă modelul 3D...<br><small>Așteaptă puțin...</small></div>
+                <div class="loading">Se încarcă modelul STEP...<br><small>Așteaptă puțin...</small></div>
             </div>
         </div>
     </div>`;
@@ -231,24 +234,32 @@ async function open3DViewer(fileUrl, productName) {
     try {
         currentViewer = new OV.EmbeddedViewer(container, {
             backgroundColor: [245, 245, 250],
-            edgeSettings: { showEdges: true }
+            edgeSettings: { 
+                showEdges: true,
+                edgeColor: [60, 60, 60],
+                edgeThreshold: 1
+            }
         });
 
         const response = await fetch(fileUrl);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status} - Verifică dacă fișierul este public`);
 
         const blob = await response.blob();
+        
         await currentViewer.LoadModelFromFile(blob, {
             fileName: fileUrl.split('/').pop() || "model.step"
         });
 
         currentViewer.FitToWindow();
+        
     } catch (err) {
         console.error("Eroare 3D:", err);
         container.innerHTML = `
             <div style="padding:80px 40px; text-align:center; color:#c0392b;">
                 <strong>Nu s-a putut încărca modelul 3D</strong><br><br>
-                <small>Fișierul se descarcă, dar apare o problemă la vizualizare.</small><br><br>
+                <small>Posibile cauze:</small><br>
+                • Fișierul nu este accesibil public (CORS)<br>
+                • Fișierul nu este un STEP valid<br><br>
                 <button onclick="close3DViewer()" style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:6px;cursor:pointer;">Închide</button>
             </div>`;
     }
@@ -257,7 +268,9 @@ async function open3DViewer(fileUrl, productName) {
 function close3DViewer() {
     const modal = document.getElementById("viewerModal");
     if (modal) modal.remove();
-    if (currentViewer) currentViewer = null;
+    if (currentViewer) {
+        currentViewer = null;
+    }
 }
 </script>
 </body>
