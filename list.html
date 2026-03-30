@@ -5,7 +5,7 @@
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Online 3D Viewer pentru STEP -->
+<!-- Online 3D Viewer -->
 <script src="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.css">
 
@@ -36,6 +36,7 @@ tr:hover{background:#f8f9fc;}
 #viewerModal .modal-header button{background:none;border:none;color:white;font-size:26px;cursor:pointer;}
 #viewerContainer{flex:1;background:#f0f2f7;position:relative;}
 .loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#555;font-size:16px;}
+.no-data{text-align:center;padding:60px;color:#666;font-size:18px;}
 </style>
 </head>
 <body>
@@ -64,35 +65,39 @@ const supabaseClient = supabase.createClient(
 
 let allOrders = [];
 let currentViewer = null;
-let viewerReady = false;
-
-// Așteptăm încărcarea librăriei 3D Viewer
-function waitForViewer(callback) {
-    if (typeof OV !== "undefined") {
-        viewerReady = true;
-        callback();
-    } else {
-        setTimeout(() => waitForViewer(callback), 300);
-    }
-}
 
 window.onload = () => {
     loadOrders();
 };
 
 async function loadOrders(){
-    const {data,error} = await supabaseClient
-        .from("comenzi")
-        .select("*")
-        .order("data_comanda", {ascending: false});
-   
-    if(error){
-        console.error(error);
-        alert("Eroare la citirea comenzilor");
-        return;
+    const listaDiv = document.getElementById("lista");
+    listaDiv.innerHTML = `<div class="loading">Se încarcă comenzile...</div>`;
+
+    try {
+        const {data, error} = await supabaseClient
+            .from("comenzi")
+            .select("*")
+            .order("data_comanda", {ascending: false});
+
+        if (error) throw error;
+
+        allOrders = data || [];
+        
+        if (allOrders.length === 0) {
+            listaDiv.innerHTML = `<div class="no-data">Nu există comenzi în baza de date.</div>`;
+        } else {
+            renderOrders(allOrders);
+        }
+    } catch (err) {
+        console.error("Eroare Supabase:", err);
+        listaDiv.innerHTML = `
+            <div style="padding:40px; text-align:center; color:red;">
+                <strong>Eroare la încărcarea comenzilor</strong><br><br>
+                ${err.message}<br><br>
+                <small>Verifică numele tabelei "comenzi" și permisiunile RLS.</small>
+            </div>`;
     }
-    allOrders = data || [];
-    renderOrders(data);
 }
 
 function formatDate(date){
@@ -133,7 +138,7 @@ function renderOrders(data){
         <tr>
             <td>${formatDate(c.data_comanda)}</td>
             <td>${c.client ?? ""}</td>
-            <td class="product-cell" ondblclick="handle3DClick('${publicUrl || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
+            <td class="product-cell" ondblclick="open3DViewer('${publicUrl || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
                 ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
             </td>
             <td>${c.cantitate ?? ""}</td>
@@ -159,31 +164,68 @@ function renderOrders(data){
     document.getElementById("lista").innerHTML = html;
 }
 
-/* === Funcțiile tale originale === */
-function editStatus(id, current){ ... }   // lasă-le neschimbate (ca înainte)
-
-async function changeStatus(id){ ... }    // lasă-le neschimbate
-
-function filterOrders(){ ... }            // lasă-le neschimbate
-
-async function updateOrder(id){ ... }     // lasă-le neschimbate
-
-/* ====================== NOU: Gestionare click 3D ====================== */
-function handle3DClick(fileUrl, productName) {
-    if (!fileUrl) {
-        alert("Nu există fișier 3D atașat!");
-        return;
-    }
-
-    if (!viewerReady || typeof OV === "undefined") {
-        alert("Vizualizatorul 3D se încarcă...\n\nAșteaptă 2-3 secunde și încearcă din nou.");
-        return;
-    }
-
-    open3DViewer(fileUrl, productName);
+/* Funcțiile tale originale - rămân neschimbate */
+function editStatus(id, current){
+    const badge = document.getElementById("badge_"+id);
+    const select = document.getElementById("status_"+id);
+    badge.style.display = "none";
+    select.style.display = "inline-block";
+    select.value = current || "Noua";
+    select.focus();
 }
 
+async function changeStatus(id){
+    const select = document.getElementById("status_"+id);
+    const badge = document.getElementById("badge_"+id);
+    let status = select.value;
+    const { error } = await supabaseClient.from("comenzi").update({ status }).eq("id", Number(id));
+    if(error) alert("Eroare update");
+    else {
+        badge.innerText = status;
+        badge.className = "status " + normalizeStatus(status);
+        select.style.display = "none";
+        badge.style.display = "inline-block";
+    }
+}
+
+function filterOrders(){
+    const search = document.getElementById("search").value.toLowerCase();
+    const status = document.getElementById("statusFilter").value;
+    let filtered = allOrders.filter(o => {
+        const matchSearch = (o.client && o.client.toLowerCase().includes(search)) ||
+                            (o.produs && o.produs.toLowerCase().includes(search));
+        const matchStatus = !status || o.status === status;
+        return matchSearch && matchStatus;
+    });
+    renderOrders(filtered);
+}
+
+async function updateOrder(id){
+    const select = document.getElementById("status_"+id);
+    const badge = document.getElementById("badge_"+id);
+    let status = (select.style.display === "inline-block") ? select.value : badge.innerText;
+    let pret = document.getElementById("pret_"+id).value || null;
+    let coment = document.getElementById("coment_"+id).value || null;
+    const { error } = await supabaseClient.from("comenzi").update({status, pret, coment}).eq("id", Number(id));
+    if(error) alert("Eroare UPDATE");
+    else {
+        alert("✅ Salvat!");
+        loadOrders();
+    }
+}
+
+/* Vizualizare 3D */
 async function open3DViewer(fileUrl, productName) {
+    if (!fileUrl) {
+        alert("Nu există fișier atașat!");
+        return;
+    }
+
+    if (typeof OV === "undefined") {
+        alert("Vizualizatorul 3D se încarcă...\nAșteaptă câteva secunde și încearcă din nou.");
+        return;
+    }
+
     const modalHTML = `
     <div id="viewerModal">
         <div class="modal-content">
@@ -192,7 +234,7 @@ async function open3DViewer(fileUrl, productName) {
                 <button onclick="close3DViewer()">✕</button>
             </div>
             <div id="viewerContainer">
-                <div class="loading">Se încarcă modelul 3D...<br><small>Așteaptă puțin...</small></div>
+                <div class="loading">Se încarcă modelul STEP...<br><small>Așteaptă puțin...</small></div>
             </div>
         </div>
     </div>`;
@@ -212,19 +254,14 @@ async function open3DViewer(fileUrl, productName) {
 
         const blob = await response.blob();
         await currentViewer.LoadModelFromFile(blob, {
-            fileName: fileUrl.split('/').pop() || "model.step"
+            fileName: fileUrl.split('/').pop()
         });
 
         currentViewer.FitToWindow();
 
     } catch (err) {
         console.error(err);
-        container.innerHTML = `
-            <div style="padding:80px 40px; text-align:center; color:#e74c3c;">
-                <strong>Nu s-a putut încărca modelul 3D</strong><br><br>
-                <small>Fișierul STEP nu a putut fi procesat.</small><br><br>
-                <button onclick="close3DViewer()" style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:6px;cursor:pointer;">Închide</button>
-            </div>`;
+        container.innerHTML = `<div style="padding:80px;text-align:center;color:#e74c3c;">Eroare la încărcarea modelului 3D.<br>Verifică consola pentru detalii.</div>`;
     }
 }
 
