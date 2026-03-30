@@ -5,7 +5,7 @@
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Online 3D Viewer - Suport STEP -->
+<!-- Online 3D Viewer - cel mai bun suport pentru STEP -->
 <script src="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.css">
 
@@ -64,13 +64,9 @@ const supabaseClient = supabase.createClient(
 
 let allOrders = [];
 let currentViewer = null;
+const BUCKET_NAME = "comenzi";   // Schimbă în "comenzi1" dacă folosești celălalt bucket
 
-// Numele bucket-ului tău (schimbă dacă folosești comenzi1)
-const BUCKET_NAME = "comenzi";   
-
-window.onload = () => {
-    loadOrders();
-};
+window.onload = () => loadOrders();
 
 async function loadOrders(){
     const {data,error} = await supabaseClient
@@ -96,18 +92,15 @@ function normalizeStatus(status){
     return status || "Noua";
 }
 
-// === Funcție importantă: generează URL public corect ===
+// Generează URL public corect
 function getPublicUrl(filePath) {
     if (!filePath) return null;
-    const { data } = supabaseClient.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(filePath);
+    const { data } = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(filePath);
     return data.publicUrl;
 }
 
 function renderOrders(data){
-    let html = `
-    <table>
+    let html = `<table>
         <tr>
             <th>Data</th>
             <th>Client</th>
@@ -119,9 +112,9 @@ function renderOrders(data){
             <th>Fisier</th>
             <th>Salveaza</th>
         </tr>`;
-   
+
     data.forEach(c => {
-        const filePath = c.file_url || c.file_path || '';   // suport pentru ambele nume de coloană
+        const filePath = c.file_url || c.file_path || '';
         const publicUrl = getPublicUrl(filePath);
         const hasFile = !!publicUrl;
 
@@ -155,7 +148,7 @@ function renderOrders(data){
     document.getElementById("lista").innerHTML = html;
 }
 
-/* === Funcțiile tale originale === */
+/* Funcțiile tale originale (editStatus, changeStatus, filterOrders, updateOrder) */
 function editStatus(id, current){
     const badge = document.getElementById("badge_"+id);
     const select = document.getElementById("status_"+id);
@@ -205,15 +198,15 @@ async function updateOrder(id){
     }
 }
 
-/* ====================== VIZUALIZARE 3D STEP ====================== */
+/* ====================== VIZUALIZARE 3D ====================== */
 async function open3DViewer(fileUrl, productName) {
     if (!fileUrl) {
-        alert("Nu există fișier 3D pentru acest produs!");
+        alert("Nu există fișier atașat acestui produs!");
         return;
     }
 
     if (typeof OV === "undefined") {
-        alert("Vizualizatorul 3D încă se încarcă... Așteaptă 2-3 secunde și încearcă din nou.");
+        alert("Vizualizatorul 3D se încarcă... Așteaptă 2-3 secunde și încearcă din nou.");
         return;
     }
 
@@ -241,11 +234,11 @@ async function open3DViewer(fileUrl, productName) {
         });
 
         const response = await fetch(fileUrl);
-        if (!response.ok) throw new Error("Fișier inaccesibil");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const blob = await response.blob();
         await currentViewer.LoadModelFromFile(blob, {
-            fileName: fileUrl.split('/').pop() || "model.step"
+            fileName: fileUrl.split('/').pop()
         });
 
         currentViewer.FitToWindow();
@@ -255,8 +248,8 @@ async function open3DViewer(fileUrl, productName) {
         container.innerHTML = `
             <div style="padding:80px 40px; text-align:center; color:#e74c3c;">
                 <strong>Nu s-a putut încărca modelul 3D</strong><br><br>
-                Verifică dacă bucket-ul "<strong>${BUCKET_NAME}</strong>" este Public.<br><br>
-                <button onclick="close3DViewer()" style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:6px;">Închide</button>
+                <small>Verifică dacă fișierul este STEP valid și bucket-ul este Public.</small><br><br>
+                <button onclick="close3DViewer()" style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:6px;cursor:pointer;">Închide</button>
             </div>`;
     }
 }
