@@ -5,7 +5,7 @@
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- === Online 3D Viewer (pentru STEP) === -->
+<!-- Online 3D Viewer -->
 <script src="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.css">
 
@@ -23,10 +23,7 @@ background:#1e3a8a;
 color:white;
 padding:15px 30px;
 }
-.logo{
-font-weight:bold;
-font-size:18px;
-}
+.logo{font-weight:bold; font-size:18px;}
 .back-btn{
 background:white;
 color:#1e3a8a;
@@ -36,127 +33,40 @@ border-radius:6px;
 cursor:pointer;
 font-weight:600;
 }
-.container{
-padding:30px 60px;
-}
-.filter-bar{
-margin-bottom:20px;
-display:flex;
-gap:15px;
-}
-input,select,textarea{
-padding:8px 10px;
-border-radius:6px;
-border:1px solid #ccc;
-}
-table{
-width:100%;
-border-collapse:collapse;
-background:white;
-border-radius:8px;
-overflow:hidden;
-box-shadow:0 5px 15px rgba(0,0,0,0.08);
-}
-th{
-background:#2c3e90;
-color:white;
-padding:14px;
-text-align:left;
-}
-td{
-padding:14px;
-border-bottom:1px solid #eee;
-}
-tr:hover{
-background:#f8f9fc;
-}
-.status{
-padding:6px 12px;
-border-radius:20px;
-font-size:12px;
-font-weight:600;
-color:white;
-}
+.container{padding:30px 60px;}
+.filter-bar{margin-bottom:20px; display:flex; gap:15px;}
+input,select,textarea{padding:8px 10px; border-radius:6px; border:1px solid #ccc;}
+table{width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 5px 15px rgba(0,0,0,0.08);}
+th{background:#2c3e90; color:white; padding:14px; text-align:left;}
+td{padding:14px; border-bottom:1px solid #eee;}
+tr:hover{background:#f8f9fc;}
+.status{padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600; color:white;}
 .status.Noua{background:#f39c12;}
 .status.InProgress{background:#3498db;}
 .status.Done{background:#2ecc71;}
-.save-btn{
-background:#27ae60;
-color:white;
-border:none;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-}
-.download-btn{
-background:#3498db;
-color:white;
-border:none;
-padding:6px 12px;
-border-radius:6px;
-cursor:pointer;
-font-size:12px;
-}
+.save-btn{background:#27ae60; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;}
+.download-btn{background:#3498db; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;}
 
-/* === Stiluri noi pentru 3D Viewer === */
-.product-cell {
-    cursor: pointer;
-    color: #1e40af;
-    font-weight: 500;
-}
-.product-cell:hover {
-    text-decoration: underline;
-}
+/* Stiluri pentru 3D */
+.product-cell {cursor: pointer; color: #1e40af; font-weight: 500;}
+.product-cell:hover {text-decoration: underline;}
 #viewerModal {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.9); z-index: 10000;
+    display: flex; align-items:center; justify-content:center;
 }
 #viewerModal .modal-content {
-    background: white;
-    width: 96%;
-    max-width: 1350px;
-    height: 94%;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    display: flex;
-    flex-direction: column;
+    background: white; width: 96%; max-width: 1350px; height: 94%;
+    border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
 }
 #viewerModal .modal-header {
-    padding: 12px 20px;
-    background: #1e3a8a;
-    color: white;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: 600;
+    padding: 12px 20px; background: #1e3a8a; color: white;
+    display: flex; justify-content: space-between; align-items: center; font-weight: 600;
 }
-#viewerModal .modal-header button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 26px;
-    cursor: pointer;
-}
-#viewerContainer {
-    flex: 1;
-    background: #f0f2f7;
-    position: relative;
-}
-.loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: #555;
-}
+#viewerModal .modal-header button {background:none; border:none; color:white; font-size:26px; cursor:pointer;}
+#viewerContainer {flex: 1; background: #f0f2f7; position: relative;}
+.loading {position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; color:#555;}
 </style>
 </head>
 <body>
@@ -184,20 +94,11 @@ const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let allOrders=[];
 let currentViewer = null;
 
-window.onload=()=>{
-loadOrders();
-};
+window.onload=()=>{ loadOrders(); };
 
 async function loadOrders(){
-const {data,error}=await supabaseClient
-.from("comenzi")
-.select("*")
-.order("data_comanda",{ascending:false});
-if(error){
-console.error(error);
-alert("Eroare la citirea comenzilor");
-return;
-}
+const {data,error}=await supabaseClient.from("comenzi").select("*").order("data_comanda",{ascending:false});
+if(error){ console.error(error); alert("Eroare la citirea comenzilor"); return; }
 allOrders=data;
 renderOrders(data);
 }
@@ -238,30 +139,21 @@ data.forEach(c=>{
 </td>
 <td>${c.cantitate ?? ""}</td>
 <td>
-<span class="status ${normalizeStatus(c.status)}"
-onclick="editStatus(${c.id},'${c.status}')"
-id="badge_${c.id}">
+<span class="status ${normalizeStatus(c.status)}" onclick="editStatus(${c.id},'${c.status}')" id="badge_${c.id}">
 ${c.status ?? "Noua"}
 </span>
-<select id="status_${c.id}" style="display:none"
-onchange="changeStatus(${c.id})">
+<select id="status_${c.id}" style="display:none" onchange="changeStatus(${c.id})">
 <option value="Noua">Noua</option>
 <option value="InProgress">InProgress</option>
 <option value="Done">Done</option>
 </select>
 </td>
-<td>
-<input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px">
-</td>
-<td>
-<textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea>
-</td>
+<td><input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px"></td>
+<td><textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea></td>
 <td>
 ${c.file_url ? `<button class="download-btn" onclick="window.open('${c.file_url}','_blank')">Descarcă</button>` : "-"}
 </td>
-<td>
-<button class="save-btn" onclick="updateOrder('${c.id}')">💾</button>
-</td>
+<td><button class="save-btn" onclick="updateOrder('${c.id}')">💾</button></td>
 </tr>
 `;
 });
@@ -283,14 +175,9 @@ async function changeStatus(id){
 const select=document.getElementById("status_"+id);
 const badge=document.getElementById("badge_"+id);
 let status=select.value;
-const { error } = await supabaseClient
-.from("comenzi")
-.update({ status: status })
-.eq("id", Number(id));
-if(error){
-console.error(error);
-alert("Eroare update");
-}else{
+const { error } = await supabaseClient.from("comenzi").update({ status: status }).eq("id", Number(id));
+if(error){ console.error(error); alert("Eroare update"); }
+else{
 badge.innerText=status;
 badge.className="status "+normalizeStatus(status);
 select.style.display="none";
@@ -302,9 +189,7 @@ function filterOrders(){
 const search=document.getElementById("search").value.toLowerCase();
 const status=document.getElementById("statusFilter").value;
 let filtered=allOrders.filter(o=>{
-const matchSearch=
-(o.client && o.client.toLowerCase().includes(search)) ||
-(o.produs && o.produs.toLowerCase().includes(search));
+const matchSearch=(o.client && o.client.toLowerCase().includes(search)) || (o.produs && o.produs.toLowerCase().includes(search));
 const matchStatus=!status || o.status===status;
 return matchSearch && matchStatus;
 });
@@ -314,36 +199,25 @@ renderOrders(filtered);
 async function updateOrder(id){
 const select=document.getElementById("status_"+id);
 const badge=document.getElementById("badge_"+id);
-let status = (select.style.display==="inline-block")
-? select.value
-: badge.innerText;
+let status = (select.style.display==="inline-block") ? select.value : badge.innerText;
 let pret=document.getElementById("pret_"+id).value;
 let coment=document.getElementById("coment_"+id).value;
 if(pret==="") pret=null;
 if(coment==="") coment=null;
-const { error } = await supabaseClient
-.from("comenzi")
-.update({
-status: status,
-pret: pret,
-coment: coment
-})
-.eq("id", Number(id));
-if(error){
-console.error(error);
-alert("Eroare UPDATE");
-}else{
-alert("Salvat!");
-loadOrders();
-}
+const { error } = await supabaseClient.from("comenzi").update({status: status, pret: pret, coment: coment}).eq("id", Number(id));
+if(error){ console.error(error); alert("Eroare UPDATE"); }
+else{ alert("Salvat!"); loadOrders(); }
 }
 
-/* === NOU: Vizualizator 3D === */
+/* === Vizualizator 3D cu proxy (pentru a ocoli CORS) === */
 async function open3DViewer(fileUrl, productName) {
     if (!fileUrl) {
         alert("Nu există fișier atașat acestui produs!");
         return;
     }
+
+    // Folosim proxy pentru a evita CORS
+    const proxiedUrl = `https://corsproxy.io/?url=${encodeURIComponent(fileUrl)}`;
 
     const modalHTML = `
     <div id="viewerModal">
@@ -368,8 +242,8 @@ async function open3DViewer(fileUrl, productName) {
             edgeSettings: { showEdges: true }
         });
 
-        const response = await fetch(fileUrl);
-        if (!response.ok) throw new Error("Fișier inaccesibil");
+        const response = await fetch(proxiedUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const blob = await response.blob();
         await currentViewer.LoadModelFromFile(blob, {
@@ -382,9 +256,8 @@ async function open3DViewer(fileUrl, productName) {
         container.innerHTML = `
             <div style="padding:60px; text-align:center; color:#e74c3c;">
                 <strong>Nu s-a putut încărca modelul 3D</strong><br><br>
-                <small>Verifică:</small><br>
-                • Bucket-ul din Supabase Storage este setat pe <strong>Public</strong><br>
-                • Fișierul STEP este accesibil direct (testează link-ul în browser)<br><br>
+                <small>Proxy-ul nu a funcționat sau fișierul nu este accesibil.</small><br>
+                Testează direct link-ul fișierului în browser.<br><br>
                 <button onclick="close3DViewer()" style="padding:8px 16px; background:#3498db; color:white; border:none; border-radius:6px;">Închide</button>
             </div>`;
     }
