@@ -5,10 +5,6 @@
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Online 3D Viewer -->
-<script src="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/online-3d-viewer@latest/build/3dviewer.css">
-
 <style>
 body{margin:0;font-family:Segoe UI,sans-serif;background:#f1f3f7;}
 .topbar{display:flex;justify-content:space-between;align-items:center;background:#1e3a8a;color:white;padding:15px 30px;}
@@ -28,10 +24,10 @@ tr:hover{background:#f8f9fc;}
 .save-btn{background:#27ae60;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
 .download-btn{background:#3498db;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
 
-/* 3D Viewer Styles */
+/* Stiluri 3D Viewer */
 .product-cell{cursor:pointer;color:#1e40af;font-weight:500;}
 .product-cell:hover{text-decoration:underline;}
-#viewerModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10000;display:flex;align-items:center;justify-content:center;}
+#viewerModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:10000;display:flex;align-items:center;justify-content:center;}
 #viewerModal .modal-content{background:white;width:96%;max-width:1350px;height:94%;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;}
 #viewerModal .modal-header{padding:12px 20px;background:#1e3a8a;color:white;display:flex;justify-content:space-between;align-items:center;font-weight:600;}
 #viewerModal .modal-header button{background:none;border:none;color:white;font-size:26px;cursor:pointer;}
@@ -58,129 +54,160 @@ tr:hover{background:#f8f9fc;}
 </div>
 
 <script>
-const SUPABASE_URL="https://kbbdsywnixtfmxrtwcus.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc";
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let allOrders=[];
+// === Librăria 3D Viewer se încarcă aici ===
+const viewerScript = document.createElement('script');
+viewerScript.src = "https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js";
+document.head.appendChild(viewerScript);
+
+const supabaseClient = supabase.createClient(
+    "https://kbbdsywnixtfmxrtwcus.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
+);
+
+let allOrders = [];
 let currentViewer = null;
 
-window.onload=()=>{ loadOrders(); };
+window.onload = () => {
+    loadOrders();
+};
 
 async function loadOrders(){
-const {data,error}=await supabaseClient.from("comenzi").select("*").order("data_comanda",{ascending:false});
-if(error){console.error(error); alert("Eroare la citirea comenzilor"); return;}
-allOrders=data || [];
-renderOrders(data);
+    const {data,error} = await supabaseClient
+        .from("comenzi")
+        .select("*")
+        .order("data_comanda", {ascending: false});
+    
+    if(error){
+        console.error(error);
+        alert("Eroare la citirea comenzilor");
+        return;
+    }
+    allOrders = data || [];
+    renderOrders(data);
 }
 
 function formatDate(date){
-if(!date) return "-";
-return new Date(date).toLocaleString("ro-RO");
+    if(!date) return "-";
+    return new Date(date).toLocaleString("ro-RO");
 }
 
 function normalizeStatus(status){
-if(status==="InProgress") return "InProgress";
-return status || "Noua";
+    if(status==="InProgress") return "InProgress";
+    return status || "Noua";
 }
 
 function renderOrders(data){
-let html=`
-<table>
-<tr>
-<th>Data</th>
-<th>Client</th>
-<th>Produs</th>
-<th>Cantitate</th>
-<th>Status</th>
-<th>Pret</th>
-<th>Coment</th>
-<th>Fisier</th>
-<th>Salveaza</th>
-</tr>
-`;
-data.forEach(c=>{
-    const hasFile = !!c.file_url;
-    html+=`
-<tr>
-<td>${formatDate(c.data_comanda)}</td>
-<td>${c.client ?? ""}</td>
-<td class="product-cell" ondblclick="open3DViewer('${c.file_url || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
-    ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
-</td>
-<td>${c.cantitate ?? ""}</td>
-<td>
-<span class="status ${normalizeStatus(c.status)}" onclick="editStatus(${c.id},'${c.status}')" id="badge_${c.id}">
-${c.status ?? "Noua"}
-</span>
-<select id="status_${c.id}" style="display:none" onchange="changeStatus(${c.id})">
-<option value="Noua">Noua</option>
-<option value="InProgress">InProgress</option>
-<option value="Done">Done</option>
-</select>
-</td>
-<td><input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px"></td>
-<td><textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea></td>
-<td>
-${c.file_url ? `<button class="download-btn" onclick="window.open('${c.file_url}','_blank')">Descarcă</button>` : "-"}
-</td>
-<td><button class="save-btn" onclick="updateOrder('${c.id}')">💾</button></td>
-</tr>
-`;
-});
-html+="</table>";
-document.getElementById("lista").innerHTML=html;
+    let html = `
+    <table>
+        <tr>
+            <th>Data</th>
+            <th>Client</th>
+            <th>Produs</th>
+            <th>Cantitate</th>
+            <th>Status</th>
+            <th>Pret</th>
+            <th>Coment</th>
+            <th>Fisier</th>
+            <th>Salveaza</th>
+        </tr>`;
+    
+    data.forEach(c => {
+        const hasFile = !!c.file_url;
+        html += `
+        <tr>
+            <td>${formatDate(c.data_comanda)}</td>
+            <td>${c.client ?? ""}</td>
+            <td class="product-cell" ondblclick="open3DViewer('${c.file_url || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
+                ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
+            </td>
+            <td>${c.cantitate ?? ""}</td>
+            <td>
+                <span class="status ${normalizeStatus(c.status)}" onclick="editStatus(${c.id},'${c.status}')" id="badge_${c.id}">
+                    ${c.status ?? "Noua"}
+                </span>
+                <select id="status_${c.id}" style="display:none" onchange="changeStatus(${c.id})">
+                    <option value="Noua">Noua</option>
+                    <option value="InProgress">InProgress</option>
+                    <option value="Done">Done</option>
+                </select>
+            </td>
+            <td><input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px"></td>
+            <td><textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea></td>
+            <td>
+                ${c.file_url ? `<button class="download-btn" onclick="window.open('${c.file_url}','_blank')">Descarcă</button>` : "-"}
+            </td>
+            <td><button class="save-btn" onclick="updateOrder('${c.id}')">💾</button></td>
+        </tr>`;
+    });
+    html += "</table>";
+    document.getElementById("lista").innerHTML = html;
 }
 
-/* Funcțiile tale originale */
-function editStatus(id,current){
-const badge=document.getElementById("badge_"+id);
-const select=document.getElementById("status_"+id);
-badge.style.display="none";
-select.style.display="inline-block";
-select.value=current || "Noua";
-select.focus();
+/* === Funcțiile tale originale (neschimbate) === */
+function editStatus(id, current){
+    const badge = document.getElementById("badge_"+id);
+    const select = document.getElementById("status_"+id);
+    badge.style.display = "none";
+    select.style.display = "inline-block";
+    select.value = current || "Noua";
+    select.focus();
 }
 
 async function changeStatus(id){
-const select=document.getElementById("status_"+id);
-const badge=document.getElementById("badge_"+id);
-let status=select.value;
-const { error } = await supabaseClient.from("comenzi").update({ status }).eq("id", Number(id));
-if(error){console.error(error); alert("Eroare update");}
-else{
-badge.innerText=status;
-badge.className="status "+normalizeStatus(status);
-select.style.display="none";
-badge.style.display="inline-block";
-}
+    const select = document.getElementById("status_"+id);
+    const badge = document.getElementById("badge_"+id);
+    let status = select.value;
+    const { error } = await supabaseClient.from("comenzi").update({ status }).eq("id", Number(id));
+    if(error){
+        console.error(error);
+        alert("Eroare update");
+    } else {
+        badge.innerText = status;
+        badge.className = "status " + normalizeStatus(status);
+        select.style.display = "none";
+        badge.style.display = "inline-block";
+    }
 }
 
 function filterOrders(){
-const search=document.getElementById("search").value.toLowerCase();
-const status=document.getElementById("statusFilter").value;
-let filtered=allOrders.filter(o=>{
-const matchSearch=(o.client && o.client.toLowerCase().includes(search)) || (o.produs && o.produs.toLowerCase().includes(search));
-const matchStatus=!status || o.status===status;
-return matchSearch && matchStatus;
-});
-renderOrders(filtered);
+    const search = document.getElementById("search").value.toLowerCase();
+    const status = document.getElementById("statusFilter").value;
+    let filtered = allOrders.filter(o => {
+        const matchSearch = (o.client && o.client.toLowerCase().includes(search)) ||
+                            (o.produs && o.produs.toLowerCase().includes(search));
+        const matchStatus = !status || o.status === status;
+        return matchSearch && matchStatus;
+    });
+    renderOrders(filtered);
 }
 
 async function updateOrder(id){
-const select=document.getElementById("status_"+id);
-const badge=document.getElementById("badge_"+id);
-let status = (select.style.display==="inline-block") ? select.value : badge.innerText;
-let pret=document.getElementById("pret_"+id).value || null;
-let coment=document.getElementById("coment_"+id).value || null;
-const { error } = await supabaseClient.from("comenzi").update({status, pret, coment}).eq("id", Number(id));
-if(error){console.error(error); alert("Eroare UPDATE");}
-else{alert("Salvat!"); loadOrders();}
+    const select = document.getElementById("status_"+id);
+    const badge = document.getElementById("badge_"+id);
+    let status = (select.style.display === "inline-block") ? select.value : badge.innerText;
+    let pret = document.getElementById("pret_"+id).value || null;
+    let coment = document.getElementById("coment_"+id).value || null;
+
+    const { error } = await supabaseClient.from("comenzi").update({status, pret, coment}).eq("id", Number(id));
+    if(error){
+        console.error(error);
+        alert("Eroare UPDATE");
+    } else {
+        alert("Salvat!");
+        loadOrders();
+    }
 }
 
 /* ====================== VIZUALIZARE 3D ====================== */
 async function open3DViewer(fileUrl, productName) {
     if (!fileUrl) {
         alert("Nu există fișier atașat acestui produs!");
+        return;
+    }
+
+    // Verificăm dacă librăria s-a încărcat
+    if (typeof OV === "undefined") {
+        alert("Se încarcă vizualizatorul 3D... Încearcă din nou în câteva secunde.");
         return;
     }
 
@@ -204,16 +231,15 @@ async function open3DViewer(fileUrl, productName) {
     try {
         currentViewer = new OV.EmbeddedViewer(container, {
             backgroundColor: [245, 245, 250],
-            edgeSettings: { showEdges: true, edgeColor: [60,60,60] }
+            edgeSettings: { showEdges: true }
         });
 
-        // Folosim direct URL-ul tău public
         const response = await fetch(fileUrl);
-        if (!response.ok) throw new Error("Nu s-a putut descărca fișierul");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const blob = await response.blob();
         await currentViewer.LoadModelFromFile(blob, {
-            fileName: fileUrl.split('/').pop()
+            fileName: fileUrl.split('/').pop() || "model.step"
         });
 
         currentViewer.FitToWindow();
@@ -222,11 +248,8 @@ async function open3DViewer(fileUrl, productName) {
         container.innerHTML = `
             <div style="padding:80px 40px; text-align:center; color:#c0392b;">
                 <strong>Nu s-a putut încărca modelul 3D</strong><br><br>
-                Link-ul fișierului este corect, dar browser-ul nu permite încărcarea din cauza CORS.<br><br>
-                <small>Poți descărca fișierul manual din coloana "Fisier".</small><br><br>
-                <button onclick="close3DViewer()" style="padding:10px 20px; background:#3498db; color:white; border:none; border-radius:6px; cursor:pointer;">
-                    Închide
-                </button>
+                <small>Fișierul se descarcă, dar apare o problemă la vizualizare.</small><br><br>
+                <button onclick="close3DViewer()" style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:6px;cursor:pointer;">Închide</button>
             </div>`;
     }
 }
@@ -234,7 +257,7 @@ async function open3DViewer(fileUrl, productName) {
 function close3DViewer() {
     const modal = document.getElementById("viewerModal");
     if (modal) modal.remove();
-    currentViewer = null;
+    if (currentViewer) currentViewer = null;
 }
 </script>
 </body>
