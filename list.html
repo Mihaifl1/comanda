@@ -1,6 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
 <meta charset="UTF-8">
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -9,22 +6,12 @@
 
 <style>
 body{margin:0;font-family:Segoe UI,sans-serif;background:#f1f3f7;}
-.topbar{display:flex;justify-content:space-between;align-items:center;background:#1e3a8a;color:white;padding:15px 30px;}
-.logo{font-weight:bold;font-size:18px;}
-.back-btn{background:white;color:#1e3a8a;border:none;padding:8px 15px;border-radius:6px;cursor:pointer;font-weight:600;}
-.container{padding:30px 60px;}
-.filter-bar{margin-bottom:20px;display:flex;gap:15px;}
-input,select,textarea{padding:8px 10px;border-radius:6px;border:1px solid #ccc;}
-table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 5px 15px rgba(0,0,0,0.08);}
-th{background:#2c3e90;color:white;padding:14px;text-align:left;}
-td{padding:14px;border-bottom:1px solid #eee;}
-tr:hover{background:#f8f9fc;}
-.status{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;color:white;}
-.status.Noua{background:#f39c12;}
-.status.InProgress{background:#3498db;}
+@@ -25,95 +23,101 @@
 .status.Done{background:#2ecc71;}
 .save-btn{background:#27ae60;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
 .download-btn{background:#3498db;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
+
+/* Stiluri 3D Viewer */
 .product-cell{cursor:pointer;color:#1e40af;font-weight:500;}
 .product-cell:hover{text-decoration:underline;}
 #viewerModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:10000;display:flex;align-items:center;justify-content:center;}
@@ -32,13 +19,16 @@ tr:hover{background:#f8f9fc;}
 #viewerModal .modal-header{padding:12px 20px;background:#1e3a8a;color:white;display:flex;justify-content:space-between;align-items:center;font-weight:600;}
 #viewerModal .modal-header button{background:none;border:none;color:white;font-size:26px;cursor:pointer;}
 #viewerContainer{flex:1;background:#f0f2f7;position:relative;}
-.loading,.no-data,.error-msg{padding:80px;text-align:center;font-size:18px;}
+.loading, .no-data, .error-msg{padding:80px;text-align:center;font-size:18px;}
+.loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#555;}
 </style>
 </head>
 <body>
 <div class="topbar">
     <div class="logo">📦 Sistem Comenzi</div>
     <button class="back-btn" onclick="location.href='index.html'">⬅ Înapoi</button>
+<div class="logo">📦 Sistem Comenzi</div>
+<button class="back-btn" onclick="location.href='index.html'">⬅ Înapoi</button>
 </div>
 <div class="container">
     <div class="filter-bar">
@@ -51,38 +41,69 @@ tr:hover{background:#f8f9fc;}
         </select>
     </div>
     <div id="lista"></div>
+<div class="filter-bar">
+<input type="text" id="search" placeholder="Caută client / produs" onkeyup="filterOrders()">
+<select id="statusFilter" onchange="filterOrders()">
+<option value="">Toate</option>
+<option value="Noua">Noua</option>
+<option value="InProgress">InProgress</option>
+<option value="Done">Done</option>
+</select>
+</div>
+<div id="lista"></div>
 </div>
 
 <script>
+// === Librăria 3D Viewer se încarcă aici ===
+const viewerScript = document.createElement('script');
+viewerScript.src = "https://unpkg.com/online-3d-viewer@latest/build/3dviewer.min.js";
+document.head.appendChild(viewerScript);
+
 const supabaseClient = supabase.createClient(
-    "https://kbbdsywnixtfmxrtwcus.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
+"https://kbbdsywnixtfmxrtwcus.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
 );
 
 let allOrders = [];
 let currentViewer = null;
-
-window.onload = () => {
-    console.log("Pagina s-a încărcat. Se încarcă datele...");
-    loadOrders();
-};
 
 async function loadOrders() {
     const listaDiv = document.getElementById("lista");
     listaDiv.innerHTML = `<div class="loading">Se încarcă comenzile din Supabase...</div>`;
 
     try {
+        // Schimbă "comenzi" dacă tabela ta are alt nume (ex: "orders", "comanda")
         const { data, error } = await supabaseClient
-            .from("comenzi")   // ← Schimbă aici dacă numele tabelei este diferit (ex: "orders")
+            .from("comenzi")
             .select("*")
             .order("data_comanda", { ascending: false });
 
-        console.log("Răspuns Supabase → data:", data);
-        console.log("Răspuns Supabase → error:", error);
+        console.log("Supabase response:", { data, error });   // vezi în consolă
+window.onload = () => {
+    loadOrders();
+};
 
         if (error) throw error;
+async function loadOrders(){
+    const {data,error} = await supabaseClient
+        .from("comenzi")
+        .select("*")
+        .order("data_comanda", {ascending: false});
+    
+    if(error){
+        console.error(error);
+        alert("Eroare la citirea comenzilor");
+        return;
+    }
+    allOrders = data || [];
+    renderOrders(data);
+}
 
         allOrders = data || [];
+function formatDate(date){
+    if(!date) return "-";
+    return new Date(date).toLocaleString("ro-RO");
+}
 
         if (allOrders.length === 0) {
             listaDiv.innerHTML = `<div class="no-data">Nu există comenzi în tabel.<br>Verifică dacă ai date în Supabase.</div>`;
@@ -90,59 +111,68 @@ async function loadOrders() {
             renderOrders(allOrders);
         }
     } catch (err) {
-        console.error("EROARE COMPLETĂ Supabase:", err);
+        console.error("Eroare completă:", err);
         listaDiv.innerHTML = `
             <div class="error-msg" style="color:red;">
                 <strong>Nu s-au putut încărca datele</strong><br><br>
-                Mesaj eroare: ${err.message}<br><br>
-                <small>Verifică:<br>
-                1. Numele tabelei (este exact "comenzi"?)<br>
-                2. Ai date în tabel?<br>
-                3. RLS permite accesul cu cheia anon?</small>
+                Mesaj: ${err.message}<br><br>
+                <small>Posibile cauze:<br>
+                • Tabela nu se numește "comenzi"<br>
+                • RLS este activat și blochează anon key<br>
+                • Nu există date în tabel</small>
             </div>`;
     }
+function normalizeStatus(status){
+    if(status==="InProgress") return "InProgress";
+    return status || "Noua";
 }
 
 function renderOrders(data) {
     let html = `<table>
-        <tr>
+function renderOrders(data){
+    let html = `
+    <table>
+       <tr>
             <th>Data</th><th>Client</th><th>Produs</th><th>Cantitate</th>
             <th>Status</th><th>Pret</th><th>Coment</th><th>Fisier</th><th>Salveaza</th>
-        </tr>`;
+            <th>Data</th>
+            <th>Client</th>
+            <th>Produs</th>
+            <th>Cantitate</th>
+            <th>Status</th>
+            <th>Pret</th>
+            <th>Coment</th>
+            <th>Fisier</th>
+            <th>Salveaza</th>
+       </tr>`;
 
-    data.forEach(c => {
+    
+data.forEach(c => {
         const filePath = c.file_url || c.file_path || '';
         const publicUrl = getPublicUrl(filePath);
         const hasFile = !!publicUrl;
 
-        html += `
-        <tr>
-            <td>${formatDate(c.data_comanda)}</td>
-            <td>${c.client ?? ""}</td>
+        const hasFile = !!c.file_url;
+html += `
+       <tr>
+           <td>${formatDate(c.data_comanda)}</td>
+           <td>${c.client ?? ""}</td>
             <td class="product-cell" ondblclick="open3DViewer('${publicUrl || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
-                ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
-            </td>
-            <td>${c.cantitate ?? ""}</td>
-            <td>
-                <span class="status ${normalizeStatus(c.status)}" onclick="editStatus(${c.id},'${c.status}')" id="badge_${c.id}">
-                    ${c.status ?? "Noua"}
-                </span>
-                <select id="status_${c.id}" style="display:none" onchange="changeStatus(${c.id})">
-                    <option value="Noua">Noua</option>
-                    <option value="InProgress">InProgress</option>
-                    <option value="Done">Done</option>
-                </select>
-            </td>
-            <td><input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px"></td>
-            <td><textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea></td>
-            <td>
+            <td class="product-cell" ondblclick="open3DViewer('${c.file_url || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
+               ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
+           </td>
+           <td>${c.cantitate ?? ""}</td>
+@@ -130,7 +134,7 @@
+           <td><input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px"></td>
+           <td><textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea></td>
+           <td>
                 ${hasFile ? `<button class="download-btn" onclick="window.open('${publicUrl}','_blank')">Descarcă</button>` : "-"}
-            </td>
-            <td><button class="save-btn" onclick="updateOrder('${c.id}')">💾</button></td>
-        </tr>`;
-    });
-    html += "</table>";
-    document.getElementById("lista").innerHTML = html;
+                ${c.file_url ? `<button class="download-btn" onclick="window.open('${c.file_url}','_blank')">Descarcă</button>` : "-"}
+           </td>
+           <td><button class="save-btn" onclick="updateOrder('${c.id}')">💾</button></td>
+       </tr>`;
+@@ -139,20 +143,8 @@
+document.getElementById("lista").innerHTML = html;
 }
 
 /* Funcții auxiliare */
@@ -157,23 +187,131 @@ function getPublicUrl(filePathOrUrl) {
     return data.publicUrl;
 }
 
-/* === Păstrează funcțiile tale originale aici === */
-function editStatus(id, current){ /* ... */ }
-async function changeStatus(id){ /* ... */ }
-function filterOrders(){ /* ... */ }
-async function updateOrder(id){ /* ... */ }
-
-/* Vizualizare 3D */
-async function open3DViewer(fileUrl, productName) {
-    if (!fileUrl) return alert("Nu există fișier 3D!");
-    if (typeof OV === "undefined") return alert("Vizualizatorul 3D se încarcă... Așteaptă 3 secunde.");
-
-    // modal + viewer cod (la fel ca înainte)
-    const modalHTML = `...`; // folosește codul anterior pentru modal
-    // ...
+/* Funcțiile tale originale */
+function editStatus(id, current){ /* codul original */ 
+/* === Funcțiile tale originale (neschimbate) === */
+function editStatus(id, current){
+const badge = document.getElementById("badge_"+id);
+const select = document.getElementById("status_"+id);
+badge.style.display = "none";
+@@ -161,21 +153,23 @@
+select.focus();
 }
 
-function close3DViewer() { /* ... */ }
+async function changeStatus(id){ /* codul original */ 
+async function changeStatus(id){
+const select = document.getElementById("status_"+id);
+const badge = document.getElementById("badge_"+id);
+let status = select.value;
+const { error } = await supabaseClient.from("comenzi").update({ status }).eq("id", Number(id));
+    if(error) alert("Eroare update");
+    else {
+    if(error){
+        console.error(error);
+        alert("Eroare update");
+    } else {
+badge.innerText = status;
+badge.className = "status " + normalizeStatus(status);
+select.style.display = "none";
+badge.style.display = "inline-block";
+}
+}
+
+function filterOrders(){ /* codul original */ 
+function filterOrders(){
+const search = document.getElementById("search").value.toLowerCase();
+const status = document.getElementById("statusFilter").value;
+let filtered = allOrders.filter(o => {
+@@ -187,32 +181,83 @@
+renderOrders(filtered);
+}
+
+async function updateOrder(id){ /* codul original */ 
+async function updateOrder(id){
+const select = document.getElementById("status_"+id);
+const badge = document.getElementById("badge_"+id);
+let status = (select.style.display === "inline-block") ? select.value : badge.innerText;
+let pret = document.getElementById("pret_"+id).value || null;
+let coment = document.getElementById("coment_"+id).value || null;
+
+const { error } = await supabaseClient.from("comenzi").update({status, pret, coment}).eq("id", Number(id));
+    if(error) alert("Eroare UPDATE");
+    else {
+        alert("✅ Salvat!");
+    if(error){
+        console.error(error);
+        alert("Eroare UPDATE");
+    } else {
+        alert("Salvat!");
+loadOrders();
+}
+}
+
+/* Vizualizare 3D (simplificat) */
+/* ====================== VIZUALIZARE 3D ====================== */
+async function open3DViewer(fileUrl, productName) {
+    if (!fileUrl) return alert("Nu există fișier!");
+    if (typeof OV === "undefined") return alert("Vizualizatorul 3D se încarcă... Așteaptă.");
+    if (!fileUrl) {
+        alert("Nu există fișier atașat acestui produs!");
+        return;
+    }
+
+    // Verificăm dacă librăria s-a încărcat
+    if (typeof OV === "undefined") {
+        alert("Se încarcă vizualizatorul 3D... Încearcă din nou în câteva secunde.");
+        return;
+    }
+
+    const modalHTML = `
+    <div id="viewerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Vizualizare 3D: ${productName}</span>
+                <button onclick="close3DViewer()">✕</button>
+            </div>
+            <div id="viewerContainer">
+                <div class="loading">Se încarcă modelul 3D...<br><small>Așteaptă puțin...</small></div>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const container = document.getElementById("viewerContainer");
+
+    // ... (păstrează codul pentru modal și OV.EmbeddedViewer din varianta anterioară)
+    // Poți copia blocul din mesajul anterior dacă vrei.
+    try {
+        currentViewer = new OV.EmbeddedViewer(container, {
+            backgroundColor: [245, 245, 250],
+            edgeSettings: { showEdges: true }
+        });
+
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const blob = await response.blob();
+        await currentViewer.LoadModelFromFile(blob, {
+            fileName: fileUrl.split('/').pop() || "model.step"
+        });
+
+        currentViewer.FitToWindow();
+    } catch (err) {
+        console.error("Eroare 3D:", err);
+        container.innerHTML = `
+            <div style="padding:80px 40px; text-align:center; color:#c0392b;">
+                <strong>Nu s-a putut încărca modelul 3D</strong><br><br>
+                <small>Fișierul se descarcă, dar apare o problemă la vizualizare.</small><br><br>
+                <button onclick="close3DViewer()" style="padding:10px 20px;background:#3498db;color:white;border:none;border-radius:6px;cursor:pointer;">Închide</button>
+            </div>`;
+    }
+}
+
+function close3DViewer() {
+const modal = document.getElementById("viewerModal");
+if (modal) modal.remove();
+    if (currentViewer) currentViewer = null;
+}
 </script>
 </body>
-</html>
