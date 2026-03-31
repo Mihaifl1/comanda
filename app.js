@@ -19,12 +19,7 @@ async function checkUser() {
 async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) alert("Login failed");
   else window.location.href = "dashboard.html";
 }
@@ -38,14 +33,14 @@ async function logout() {
 }
 
 //////////////////////////////////////////////////
-// SALVARE COMANDA CU FIȘIER
+// SALVARE COMANDĂ CU FIȘIER + EMAIL
 //////////////////////////////////////////////////
 async function saveOrder() {
-    const client = document.getElementById("client").value.trim();
-    const produs = document.getElementById("produs").value.trim();
+    const client    = document.getElementById("client").value.trim();
+    const produs    = document.getElementById("produs").value.trim();
     const cantitate = parseInt(document.getElementById("cantitate").value) || 0;
     const fileInput = document.getElementById("file");
-    const file = fileInput.files[0];
+    const file      = fileInput.files[0];
 
     if (!client || !produs || cantitate <= 0) {
         alert("Te rog completează Client, Produs și Cantitate!");
@@ -54,7 +49,7 @@ async function saveOrder() {
 
     let fileUrl = null;
 
-    // Upload fișier (dacă există)
+    // Upload fișier dacă există
     if (file) {
         try {
             const fileName = `comenzi/${Date.now()}_${file.name}`;
@@ -69,6 +64,7 @@ async function saveOrder() {
                 .getPublicUrl(fileName);
 
             fileUrl = urlData.publicUrl;
+            console.log("✅ Fișier uploadat:", fileUrl);
         } catch (e) {
             console.error("Upload error:", e);
             alert("Comanda se salvează, dar fișierul nu a putut fi uploadat.");
@@ -88,43 +84,45 @@ async function saveOrder() {
 
         if (error) throw error;
 
-        // === TRIMITE EMAIL DIRECT DIN FRONTEND ===
+        // Trimite email (folosind adresa ta de test Resend)
         try {
             const emailBody = `
                 <h2>🛒 Comandă Nouă Primita!</h2>
                 <p><strong>Client:</strong> ${client}</p>
                 <p><strong>Produs:</strong> ${produs}</p>
                 <p><strong>Cantitate:</strong> ${cantitate}</p>
-                ${fileUrl ? `<p><strong>Fișier:</strong> <a href="${fileUrl}">Descarcă fișierul</a></p>` : ''}
+                ${fileUrl ? `<p><strong>Fișier atașat:</strong> <a href="${fileUrl}" target="_blank">Descarcă fișierul</a></p>` : ''}
                 <p><strong>Data:</strong> ${new Date().toLocaleString('ro-RO')}</p>
+                <hr>
+                <small>Trimis automat din aplicație</small>
             `;
 
             const res = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer re_4HxCc4uw_FrFiSAuU1h6ZpEZS4L5Tk8xR`   // cheia ta Resend
+                    'Authorization': `Bearer re_4HxCc4uw_FrFiSAuU1h6ZpEZS4L5Tk8xR`
                 },
                 body: JSON.stringify({
-                    from: "Comenzi App <onboarding@resend.dev>",
-                    to: ["marcel.manoli@kablem.com"],
+                    from: "onboarding@resend.dev",
+                    to: ["mihay2000@list.ru"],           // ← Adresa ta de test Resend
                     subject: `Comandă nouă - ${client}`,
                     html: emailBody
                 })
             });
 
             if (res.ok) {
-                console.log("Email trimis cu succes!");
+                console.log("✅ Email trimis cu succes!");
             } else {
-                console.error("Eroare email:", await res.text());
+                const errText = await res.text();
+                console.error("Resend Error:", errText);
             }
         } catch (emailErr) {
             console.error("Eroare la trimiterea emailului:", emailErr);
-            // nu oprim salvarea comenzii dacă emailul eșuează
         }
 
-        alert("✅ Comanda a fost salvată cu succes!\nEmailul a fost trimis.");
-        
+        alert("✅ Comanda a fost salvată cu succes!\nEmailul de notificare a fost trimis.");
+
         // Reset formular
         document.getElementById("client").value = "";
         document.getElementById("produs").value = "";
@@ -135,26 +133,33 @@ async function saveOrder() {
 
     } catch (err) {
         console.error("Eroare salvare comandă:", err);
-        alert("Eroare la salvarea comenzii: " + err.message);
+        alert("Eroare la salvarea comenzii:\n" + err.message);
     }
 }
 
 //////////////////////////////////////////////////
-// LOAD LISTA (simplificat — list.html are deja render)
+// LOAD LISTA
 //////////////////////////////////////////////////
 async function loadOrders() {
-
   const { data, error } = await supabaseClient
     .from("comenzi")
     .select("*")
     .order("data_comanda", { ascending: false });
 
   if (error) {
-    console.log(error);
+    console.error(error);
     return;
   }
 
-  let html = "<table border='1' width='100%'><tr><th>Data</th><th>Client</th><th>Produs</th><th>Cantitate</th><th>Status</th><th>Fișier</th></tr>";
+  let html = `<table border='1' width='100%'>
+    <tr>
+      <th>Data</th>
+      <th>Client</th>
+      <th>Produs</th>
+      <th>Cantitate</th>
+      <th>Status</th>
+      <th>Fișier</th>
+    </tr>`;
 
   data.forEach(c => {
     html += `<tr>
@@ -163,11 +168,7 @@ async function loadOrders() {
       <td>${c.produs}</td>
       <td>${c.cantitate}</td>
       <td>${c.status || "Noua"}</td>
-      <td>
-        ${c.file_url 
-          ? `<a href="${c.file_url}" target="_blank">Descarcă</a>` 
-          : "-"}
-      </td>
+      <td>${c.file_url ? `<a href="${c.file_url}" target="_blank">Descarcă</a>` : "-"}</td>
     </tr>`;
   });
 
