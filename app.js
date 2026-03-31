@@ -33,7 +33,7 @@ async function logout() {
 }
 
 //////////////////////////////////////////////////
-// SALVARE COMANDĂ CU FIȘIER
+// SALVARE COMANDĂ CU FIȘIER + EMAIL AUTOMAT
 //////////////////////////////////////////////////
 async function saveOrder() {
     const client    = document.getElementById("client").value.trim();
@@ -86,7 +86,7 @@ async function saveOrder() {
 
         console.log("✅ Comanda salvată cu succes în baza de date");
 
-        alert("✅ Comanda a fost salvată cu succes!\n\nEmailul de notificare va fi trimis automat (prin Edge Function).");
+        alert("✅ Comanda a fost salvată cu succes!\n\nEmailul de notificare va fi trimis automat prin Edge Function.\n\nVerifică și folderul SPAM!");
 
         // Reset formular
         document.getElementById("client").value = "";
@@ -94,7 +94,7 @@ async function saveOrder() {
         document.getElementById("cantitate").value = "";
         fileInput.value = "";
 
-        setTimeout(() => window.location.href = "list.html", 800);
+        setTimeout(() => window.location.href = "list.html", 1000);
 
     } catch (err) {
         console.error("Eroare salvare comandă:", err);
