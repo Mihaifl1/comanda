@@ -49,7 +49,6 @@ async function saveOrder() {
 
     let fileUrl = null;
 
-    // Upload fișier
     if (file) {
         try {
             const fileName = `comenzi/${Date.now()}_${file.name}`;
@@ -64,29 +63,24 @@ async function saveOrder() {
                 .getPublicUrl(fileName);
 
             fileUrl = urlData.publicUrl;
-            console.log("✅ Fișier uploadat:", fileUrl);
         } catch (e) {
             console.error("Upload error:", e);
-            alert("Comanda se salvează, dar fișierul nu a putut fi uploadat.");
         }
     }
 
-    // Salvează comanda
     try {
         const { error } = await supabaseClient
             .from("comenzi")
             .insert([{
-                client: client,
-                produs: produs,
-                cantitate: cantitate,
+                client,
+                produs,
+                cantitate,
                 file_url: fileUrl
             }]);
 
         if (error) throw error;
 
-        console.log("✅ Comanda a fost salvată cu succes!");
-
-        alert("✅ Comanda a fost salvată cu succes!\n\nEmailul de notificare va fi trimis automat.");
+        alert(`✅ Comanda a fost salvată cu succes!\n\nClient: ${client}\nProdus: ${produs}\n\n📧 Emailul de notificare a fost trimis.`);
 
         // Reset formular
         document.getElementById("client").value = "";
@@ -94,14 +88,13 @@ async function saveOrder() {
         document.getElementById("cantitate").value = "";
         fileInput.value = "";
 
-        setTimeout(() => window.location.href = "list.html", 1000);
+        setTimeout(() => window.location.href = "list.html", 1200);
 
     } catch (err) {
-        console.error("Eroare salvare comandă:", err);
-        alert("Eroare la salvarea comenzii:\n" + err.message);
+        console.error(err);
+        alert("❌ Eroare la salvarea comenzii:\n" + err.message);
     }
 }
-
 //////////////////////////////////////////////////
 // LOAD LISTA
 //////////////////////////////////////////////////
