@@ -1,9 +1,41 @@
 const { createClient } = supabase;
 
-const supabaseClient = createClient(
-  "https://kbbdsywnixtfmxrtwcus.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
-);
+const SUPABASE_URL = "https://kbbdsywnixtfmxrtwcus.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc";
+
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+//////////////////////////////////////////////////
+// LOGIN CHECK
+//////////////////////////////////////////////////
+async function checkUser() {
+  const { data } = await supabaseClient.auth.getUser();
+  if (!data.user) window.location.href = "index.html";
+}
+
+//////////////////////////////////////////////////
+// LOGIN
+//////////////////////////////////////////////////
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) alert("Login failed");
+  else window.location.href = "dashboard.html";
+}
+
+//////////////////////////////////////////////////
+// LOGOUT
+//////////////////////////////////////////////////
+async function logout() {
+  await supabaseClient.auth.signOut();
+  window.location.href = "index.html";
+}
 
 //////////////////////////////////////////////////
 // SALVARE COMANDĂ + EMAIL
@@ -63,15 +95,17 @@ async function saveOrder() {
     if (error) throw error;
 
     //////////////////////////////////////////////////
-    // 🔥 EMAIL CORECT (FORMAT WEBHOOK)
+    // 🔥 TRIMITE EMAIL (CORECT CU API KEY)
     //////////////////////////////////////////////////
     try {
       await fetch(
-        "https://kbbdsywnixtfmxrtwcus.supabase.co/functions/v1/send-new-order-email",
+        `${SUPABASE_URL}/functions/v1/send-new-order-email`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`
           },
           body: JSON.stringify({
             type: "INSERT",
@@ -111,4 +145,49 @@ Produs: ${produs}
     console.error(err);
     alert("❌ Eroare:\n" + err.message);
   }
+}
+
+//////////////////////////////////////////////////
+// LOAD LISTA
+//////////////////////////////////////////////////
+async function loadOrders() {
+  const { data, error } = await supabaseClient
+    .from("comenzi")
+    .select("*")
+    .order("data_comanda", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  let html = `
+  <table border='1' width='100%' style="border-collapse:collapse">
+    <tr style="background:#eee">
+      <th>Data</th>
+      <th>Client</th>
+      <th>Produs</th>
+      <th>Cantitate</th>
+      <th>Status</th>
+      <th>Fișier</th>
+    </tr>
+  `;
+
+  data.forEach(c => {
+    html += `
+    <tr>
+      <td>${c.data_comanda ? new Date(c.data_comanda).toLocaleString("ro-RO") : "-"}</td>
+      <td>${c.client}</td>
+      <td>${c.produs}</td>
+      <td>${c.cantitate}</td>
+      <td>${c.status || "Noua"}</td>
+      <td>${c.file_url ? `<a href="${c.file_url}" target="_blank">Descarcă</a>` : "-"}</td>
+    </tr>
+    `;
+  });
+
+  html += "</table>";
+
+  const lista = document.getElementById("lista");
+  if (lista) lista.innerHTML = html;
 }
