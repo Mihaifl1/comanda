@@ -33,7 +33,7 @@ async function logout() {
 }
 
 //////////////////////////////////////////////////
-// SALVARE COMANDĂ CU FIȘIER + EMAIL AUTOMAT
+// SALVARE COMANDĂ CU FIȘIER
 //////////////////////////////////////////////////
 async function saveOrder() {
     const client    = document.getElementById("client").value.trim();
@@ -49,7 +49,7 @@ async function saveOrder() {
 
     let fileUrl = null;
 
-    // Upload fișier dacă există
+    // Upload fișier
     if (file) {
         try {
             const fileName = `comenzi/${Date.now()}_${file.name}`;
@@ -71,7 +71,7 @@ async function saveOrder() {
         }
     }
 
-    // Salvează comanda în baza de date
+    // Salvează comanda
     try {
         const { error } = await supabaseClient
             .from("comenzi")
@@ -84,9 +84,9 @@ async function saveOrder() {
 
         if (error) throw error;
 
-        console.log("✅ Comanda salvată cu succes în baza de date");
+        console.log("✅ Comanda a fost salvată cu succes!");
 
-        alert("✅ Comanda a fost salvată cu succes!\n\nEmailul de notificare va fi trimis automat prin Edge Function.\n\nVerifică și folderul SPAM!");
+        alert("✅ Comanda a fost salvată cu succes!\n\nEmailul de notificare va fi trimis automat.");
 
         // Reset formular
         document.getElementById("client").value = "";
