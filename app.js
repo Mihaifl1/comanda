@@ -49,7 +49,7 @@ async function saveOrder() {
 
     let fileUrl = null;
 
-    // Upload fișier dacă există
+    // Upload fișier
     if (file) {
         try {
             const fileName = `comenzi/${Date.now()}_${file.name}`;
@@ -71,7 +71,7 @@ async function saveOrder() {
         }
     }
 
-    // Salvează comanda în baza de date
+    // Salvează comanda
     try {
         const { error } = await supabaseClient
             .from("comenzi")
@@ -84,14 +84,16 @@ async function saveOrder() {
 
         if (error) throw error;
 
-        // Trimite email (folosind adresa ta de test Resend)
+        // === TRIMITE EMAIL ===
         try {
+            console.log("🔄 Se trimite email către mihay2000@list.ru...");
+
             const emailBody = `
                 <h2>🛒 Comandă Nouă Primita!</h2>
                 <p><strong>Client:</strong> ${client}</p>
                 <p><strong>Produs:</strong> ${produs}</p>
                 <p><strong>Cantitate:</strong> ${cantitate}</p>
-                ${fileUrl ? `<p><strong>Fișier atașat:</strong> <a href="${fileUrl}" target="_blank">Descarcă fișierul</a></p>` : ''}
+                ${fileUrl ? `<p><strong>Fișier atașat:</strong> <a href="${fileUrl}" target="_blank">Descarcă</a></p>` : ''}
                 <p><strong>Data:</strong> ${new Date().toLocaleString('ro-RO')}</p>
                 <hr>
                 <small>Trimis automat din aplicație</small>
@@ -105,23 +107,24 @@ async function saveOrder() {
                 },
                 body: JSON.stringify({
                     from: "onboarding@resend.dev",
-                    to: ["mihay2000@list.ru"],           // ← Adresa ta de test Resend
+                    to: ["mihay2000@list.ru"],           // Adresa ta de test Resend
                     subject: `Comandă nouă - ${client}`,
                     html: emailBody
                 })
             });
 
             if (res.ok) {
-                console.log("✅ Email trimis cu succes!");
+                console.log("✅ Email trimis cu succes către mihay2000@list.ru");
+                alert("✅ Comanda a fost salvată cu succes!\n\nEmail trimis către mihay2000@list.ru\n\nVerifică și folderul SPAM / Promoții!");
             } else {
                 const errText = await res.text();
-                console.error("Resend Error:", errText);
+                console.error("❌ Resend Error:", errText);
+                alert("Comanda salvată, dar emailul nu a putut fi trimis.\nVerifică consola (F12).");
             }
         } catch (emailErr) {
-            console.error("Eroare la trimiterea emailului:", emailErr);
+            console.error("❌ Eroare la trimiterea emailului:", emailErr);
+            alert("Comanda a fost salvată, dar emailul nu a putut fi trimis.");
         }
-
-        alert("✅ Comanda a fost salvată cu succes!\nEmailul de notificare a fost trimis.");
 
         // Reset formular
         document.getElementById("client").value = "";
@@ -129,7 +132,7 @@ async function saveOrder() {
         document.getElementById("cantitate").value = "";
         fileInput.value = "";
 
-        setTimeout(() => window.location.href = "list.html", 800);
+        setTimeout(() => window.location.href = "list.html", 1000);
 
     } catch (err) {
         console.error("Eroare salvare comandă:", err);
