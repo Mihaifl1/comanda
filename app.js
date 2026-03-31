@@ -41,58 +41,102 @@ async function logout() {
 // SALVARE COMANDA CU FIȘIER
 //////////////////////////////////////////////////
 async function saveOrder() {
-
-  const client = document.getElementById("client").value;
-  const produs = document.getElementById("produs").value;
-  const cantitate = document.getElementById("cantitate").value;
-  const fileInput = document.getElementById("file");
-
-  let fileUrl = null;
-
-  // 🔹 Dacă există fișier
-  if (fileInput.files.length > 0) {
-
+    const client = document.getElementById("client").value.trim();
+    const produs = document.getElementById("produs").value.trim();
+    const cantitate = parseInt(document.getElementById("cantitate").value) || 0;
+    const fileInput = document.getElementById("file");
     const file = fileInput.files[0];
-    const fileName = Date.now() + "_" + file.name;
 
-    // Upload în bucket "comenzi"
-    const { error: uploadError } = await supabaseClient
-      .storage
-      .from("comenzi")
-      .upload(fileName, file);
-
-    if (uploadError) {
-      alert("Eroare upload fișier");
-      console.error(uploadError);
-      return;
+    if (!client || !produs || cantitate <= 0) {
+        alert("Te rog completează Client, Produs și Cantitate!");
+        return;
     }
 
-    // Obține URL public
-    const { data } = supabaseClient
-      .storage
-      .from("comenzi")
-      .getPublicUrl(fileName);
+    let fileUrl = null;
 
-    fileUrl = data.publicUrl;
-  }
+    // Upload fișier (dacă există)
+    if (file) {
+        try {
+            const fileName = `comenzi/${Date.now()}_${file.name}`;
+            const { error: uploadError } = await supabaseClient.storage
+                .from("comenzi")
+                .upload(fileName, file);
 
-  // 🔹 Inserare în tabel
-  const { error } = await supabaseClient
-    .from("comenzi")
-    .insert([{
-      client,
-      produs,
-      cantitate,
-      file_url: fileUrl
-    }]);
+            if (uploadError) throw uploadError;
 
-  if (error) {
-    alert("Eroare salvare comandă");
-    console.error(error);
-  } else {
-    alert("Comandă salvată!");
-    window.location.href = "list.html";
-  }
+            const { data: urlData } = supabaseClient.storage
+                .from("comenzi")
+                .getPublicUrl(fileName);
+
+            fileUrl = urlData.publicUrl;
+        } catch (e) {
+            console.error("Upload error:", e);
+            alert("Comanda se salvează, dar fișierul nu a putut fi uploadat.");
+        }
+    }
+
+    // Salvează comanda în baza de date
+    try {
+        const { error } = await supabaseClient
+            .from("comenzi")
+            .insert([{
+                client: client,
+                produs: produs,
+                cantitate: cantitate,
+                file_url: fileUrl
+            }]);
+
+        if (error) throw error;
+
+        // === TRIMITE EMAIL DIRECT DIN FRONTEND ===
+        try {
+            const emailBody = `
+                <h2>🛒 Comandă Nouă Primita!</h2>
+                <p><strong>Client:</strong> ${client}</p>
+                <p><strong>Produs:</strong> ${produs}</p>
+                <p><strong>Cantitate:</strong> ${cantitate}</p>
+                ${fileUrl ? `<p><strong>Fișier:</strong> <a href="${fileUrl}">Descarcă fișierul</a></p>` : ''}
+                <p><strong>Data:</strong> ${new Date().toLocaleString('ro-RO')}</p>
+            `;
+
+            const res = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer re_4HxCc4uw_FrFiSAuU1h6ZpEZS4L5Tk8xR`   // cheia ta Resend
+                },
+                body: JSON.stringify({
+                    from: "Comenzi App <onboarding@resend.dev>",
+                    to: ["marcel.manoli@kablem.com"],
+                    subject: `Comandă nouă - ${client}`,
+                    html: emailBody
+                })
+            });
+
+            if (res.ok) {
+                console.log("Email trimis cu succes!");
+            } else {
+                console.error("Eroare email:", await res.text());
+            }
+        } catch (emailErr) {
+            console.error("Eroare la trimiterea emailului:", emailErr);
+            // nu oprim salvarea comenzii dacă emailul eșuează
+        }
+
+        alert("✅ Comanda a fost salvată cu succes!\nEmailul a fost trimis.");
+        
+        // Reset formular
+        document.getElementById("client").value = "";
+        document.getElementById("produs").value = "";
+        document.getElementById("cantitate").value = "";
+        fileInput.value = "";
+
+        setTimeout(() => window.location.href = "list.html", 800);
+
+    } catch (err) {
+        console.error("Eroare salvare comandă:", err);
+        alert("Eroare la salvarea comenzii: " + err.message);
+    }
 }
 
 //////////////////////////////////////////////////
