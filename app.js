@@ -19,7 +19,12 @@ async function checkUser() {
 async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
   if (error) alert("Login failed");
   else window.location.href = "dashboard.html";
 }
@@ -33,68 +38,109 @@ async function logout() {
 }
 
 //////////////////////////////////////////////////
-// SALVARE COMANDĂ CU FIȘIER
+// SALVARE COMANDĂ + EMAIL
 //////////////////////////////////////////////////
 async function saveOrder() {
-    const client    = document.getElementById("client").value.trim();
-    const produs    = document.getElementById("produs").value.trim();
-    const cantitate = parseInt(document.getElementById("cantitate").value) || 0;
-    const fileInput = document.getElementById("file");
-    const file      = fileInput.files[0];
+  const client = document.getElementById("client").value.trim();
+  const produs = document.getElementById("produs").value.trim();
+  const cantitate = parseInt(document.getElementById("cantitate").value) || 0;
+  const fileInput = document.getElementById("file");
+  const file = fileInput.files[0];
 
-    if (!client || !produs || cantitate <= 0) {
-        alert("Te rog completează Client, Produs și Cantitate!");
-        return;
-    }
+  if (!client || !produs || cantitate <= 0) {
+    alert("Te rog completează Client, Produs și Cantitate!");
+    return;
+  }
 
-    let fileUrl = null;
+  let fileUrl = null;
 
-    if (file) {
-        try {
-            const fileName = `comenzi/${Date.now()}_${file.name}`;
-            const { error: uploadError } = await supabaseClient.storage
-                .from("comenzi")
-                .upload(fileName, file);
-
-            if (uploadError) throw uploadError;
-
-            const { data: urlData } = supabaseClient.storage
-                .from("comenzi")
-                .getPublicUrl(fileName);
-
-            fileUrl = urlData.publicUrl;
-        } catch (e) {
-            console.error("Upload error:", e);
-        }
-    }
-
+  //////////////////////////////////////////////////
+  // UPLOAD FIȘIER
+  //////////////////////////////////////////////////
+  if (file) {
     try {
-        const { error } = await supabaseClient
-            .from("comenzi")
-            .insert([{
-                client,
-                produs,
-                cantitate,
-                file_url: fileUrl
-            }]);
+      const fileName = `comenzi/${Date.now()}_${file.name}`;
 
-        if (error) throw error;
+      const { error: uploadError } = await supabaseClient.storage
+        .from("comenzi")
+        .upload(fileName, file);
 
-        alert(`✅ Comanda a fost salvată cu succes!\n\nClient: ${client}\nProdus: ${produs}\n\n📧 Emailul de notificare a fost trimis.`);
+      if (uploadError) throw uploadError;
 
-        // Reset formular
-        document.getElementById("client").value = "";
-        document.getElementById("produs").value = "";
-        document.getElementById("cantitate").value = "";
-        fileInput.value = "";
+      const { data: urlData } = supabaseClient.storage
+        .from("comenzi")
+        .getPublicUrl(fileName);
 
-        setTimeout(() => window.location.href = "list.html", 1200);
+      fileUrl = urlData.publicUrl;
 
-    } catch (err) {
-        console.error(err);
-        alert("❌ Eroare la salvarea comenzii:\n" + err.message);
+    } catch (e) {
+      console.error("Upload error:", e);
     }
+  }
+
+  //////////////////////////////////////////////////
+  // SALVARE ÎN DB
+  //////////////////////////////////////////////////
+  try {
+    const { error } = await supabaseClient
+      .from("comenzi")
+      .insert([{
+        client,
+        produs,
+        cantitate,
+        file_url: fileUrl,
+        status: "Noua"
+      }]);
+
+    if (error) throw error;
+
+    //////////////////////////////////////////////////
+    // 🔥 TRIMITE EMAIL (EDGE FUNCTION)
+    //////////////////////////////////////////////////
+    try {
+      await fetch(
+        "https://kbbdsywnixtfmxrtwcus.supabase.co/functions/v1/send-new-order-email",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            client,
+            produs,
+            cantitate,
+            file_url: fileUrl
+          })
+        }
+      );
+    } catch (emailErr) {
+      console.error("Email error:", emailErr);
+    }
+
+    //////////////////////////////////////////////////
+    // SUCCESS UI
+    //////////////////////////////////////////////////
+    alert(`✅ Comanda a fost salvată cu succes!
+
+Client: ${client}
+Produs: ${produs}
+
+📧 Email trimis automat`);
+
+    // reset
+    document.getElementById("client").value = "";
+    document.getElementById("produs").value = "";
+    document.getElementById("cantitate").value = "";
+    fileInput.value = "";
+
+    setTimeout(() => window.location.href = "list.html", 1200);
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Eroare:\n" + err.message);
+  }
 }
+
 //////////////////////////////////////////////////
 // LOAD LISTA
 //////////////////////////////////////////////////
@@ -109,25 +155,29 @@ async function loadOrders() {
     return;
   }
 
-  let html = `<table border='1' width='100%'>
-    <tr>
+  let html = `
+  <table border='1' width='100%' style="border-collapse:collapse">
+    <tr style="background:#eee">
       <th>Data</th>
       <th>Client</th>
       <th>Produs</th>
       <th>Cantitate</th>
       <th>Status</th>
       <th>Fișier</th>
-    </tr>`;
+    </tr>
+  `;
 
   data.forEach(c => {
-    html += `<tr>
+    html += `
+    <tr>
       <td>${c.data_comanda ? new Date(c.data_comanda).toLocaleString("ro-RO") : "-"}</td>
       <td>${c.client}</td>
       <td>${c.produs}</td>
       <td>${c.cantitate}</td>
       <td>${c.status || "Noua"}</td>
       <td>${c.file_url ? `<a href="${c.file_url}" target="_blank">Descarcă</a>` : "-"}</td>
-    </tr>`;
+    </tr>
+    `;
   });
 
   html += "</table>";
