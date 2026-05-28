@@ -4,50 +4,169 @@
 <meta charset="UTF-8">
 <title>Lista Comenzi</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-body{margin:0;font-family:Segoe UI,sans-serif;background:#f1f3f7;}
-.topbar{display:flex;justify-content:space-between;align-items:center;background:#1e3a8a;color:white;padding:15px 30px;}
-.logo{font-weight:bold;font-size:18px;}
-.back-btn{background:white;color:#1e3a8a;border:none;padding:8px 15px;border-radius:6px;cursor:pointer;font-weight:600;}
-.container{padding:30px 60px;}
-.filter-bar{margin-bottom:20px;display:flex;gap:15px;}
-input,select,textarea{padding:8px 10px;border-radius:6px;border:1px solid #ccc;}
-table{width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 5px 15px rgba(0,0,0,0.08);}
-th{background:#2c3e90;color:white;padding:14px;text-align:left;}
-td{padding:14px;border-bottom:1px solid #eee;}
-tr:hover{background:#f8f9fc;}
-.status{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;color:white;}
-.status.Noua{background:#f39c12;}
-.status.InProgress{background:#3498db;}
-.status.Done{background:#2ecc71;}
-.save-btn{background:#27ae60;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
-.download-btn{background:#3498db;color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
-.product-cell{cursor:pointer;color:#1e40af;font-weight:500;}
-.product-cell:hover{text-decoration:underline;}
+body{
+    margin:0;
+    font-family:Segoe UI,sans-serif;
+    background:#f1f3f7;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#1e3a8a;
+    color:white;
+    padding:15px 30px;
+}
+
+.logo{
+    font-weight:bold;
+    font-size:18px;
+}
+
+.back-btn{
+    background:white;
+    color:#1e3a8a;
+    border:none;
+    padding:8px 15px;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.container{
+    padding:30px 60px;
+}
+
+.filter-bar{
+    margin-bottom:20px;
+    display:flex;
+    gap:15px;
+}
+
+input,select,textarea{
+    padding:8px 10px;
+    border-radius:6px;
+    border:1px solid #ccc;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 5px 15px rgba(0,0,0,0.08);
+}
+
+th{
+    background:#2c3e90;
+    color:white;
+    padding:14px;
+    text-align:left;
+}
+
+td{
+    padding:14px;
+    border-bottom:1px solid #eee;
+}
+
+tr:hover{
+    background:#f8f9fc;
+}
+
+.status{
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    color:white;
+    cursor:pointer;
+}
+
+.status.Noua{
+    background:#f39c12;
+}
+
+.status.InProgress{
+    background:#3498db;
+}
+
+.status.Done{
+    background:#2ecc71;
+}
+
+.download-btn{
+    background:#3498db;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:12px;
+}
+
+.product-cell{
+    cursor:pointer;
+    color:#1e40af;
+    font-weight:500;
+}
+
+.product-cell:hover{
+    text-decoration:underline;
+}
+
+.autosave{
+    font-size:11px;
+    color:#16a34a;
+    margin-top:4px;
+}
 </style>
 </head>
+
 <body>
+
 <div class="topbar">
 <div class="logo">📦 Sistem Comenzi</div>
-<button class="back-btn" onclick="location.href='index.html'">⬅ Înapoi</button>
+
+<button class="back-btn"
+onclick="location.href='index.html'">
+⬅ Înapoi
+</button>
 </div>
+
 <div class="container">
+
 <div class="filter-bar">
-<input type="text" id="search" placeholder="Caută client / produs" onkeyup="filterOrders()">
-<select id="statusFilter" onchange="filterOrders()">
+
+<input
+type="text"
+id="search"
+placeholder="Caută client / produs"
+onkeyup="filterOrders()">
+
+<select id="statusFilter"
+onchange="filterOrders()">
+
 <option value="">Toate</option>
 <option value="Noua">Noua</option>
 <option value="InProgress">InProgress</option>
 <option value="Done">Done</option>
+
 </select>
 </div>
+
 <div id="lista"></div>
+
 </div>
 
 <script>
+
 const supabaseClient = supabase.createClient(
-    "https://kbbdsywnixtfmxrtwcus.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
+"https://kbbdsywnixtfmxrtwcus.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
 );
 
 let allOrders = [];
@@ -57,22 +176,26 @@ window.onload = () => {
 };
 
 async function loadOrders(){
+
     const {data,error} = await supabaseClient
-        .from("comenzi")
-        .select("*")
-        .order("data_comanda",{ascending:false});
+    .from("comenzi")
+    .select("*")
+    .order("data_comanda",{ascending:false});
 
     if(error){
         console.error(error);
         alert("Eroare la citirea comenzilor");
         return;
     }
+
     allOrders = data || [];
     renderOrders(data);
 }
 
 function formatDate(date){
+
     if(!date) return "-";
+
     return new Date(date).toLocaleString("ro-RO");
 }
 
@@ -80,26 +203,35 @@ function normalizeStatus(status){
     return status || "Noua";
 }
 
-// Construiește URL-ul public corect
-function getPublicUrl(filePath) {
+function getPublicUrl(filePath){
+
     if (!filePath) return null;
-    // Dacă este deja URL complet, îl folosim direct
+
     if (filePath.startsWith("http")) {
         return filePath;
     }
-    const { data } = supabaseClient.storage.from("comenzi").getPublicUrl(filePath);
+
+    const { data } =
+    supabaseClient.storage
+    .from("comenzi")
+    .getPublicUrl(filePath);
+
     return data.publicUrl;
 }
 
-// Construiește link-ul EXACT pentru 3dviewer.net (fără codificare dublă)
-function get3DViewerLink(fileUrl) {
+function get3DViewerLink(fileUrl){
+
     if (!fileUrl) return null;
+
     return `https://3dviewer.net/#model=${fileUrl}`;
 }
 
 function renderOrders(data){
-    let html = `
+
+let html = `
+
 <table>
+
 <tr>
 <th>Data</th>
 <th>Client</th>
@@ -109,107 +241,211 @@ function renderOrders(data){
 <th>Pret</th>
 <th>Coment</th>
 <th>Fisier</th>
-<th>Salveaza</th>
 </tr>
-`;
-    data.forEach(c => {
-        const filePath = c.file_url || c.file_path || '';
-        const publicUrl = getPublicUrl(filePath);
-        const viewerLink = get3DViewerLink(publicUrl);
-        const hasFile = !!publicUrl;
 
-        html += `
+`;
+
+data.forEach(c => {
+
+const filePath =
+c.file_url || c.file_path || '';
+
+const publicUrl =
+getPublicUrl(filePath);
+
+const viewerLink =
+get3DViewerLink(publicUrl);
+
+const hasFile = !!publicUrl;
+
+html += `
+
 <tr>
+
 <td>${formatDate(c.data_comanda)}</td>
+
 <td>${c.client ?? ""}</td>
-<td class="product-cell" ondblclick="open3DViewer('${viewerLink || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
-    ${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
+
+<td class="product-cell"
+ondblclick="open3DViewer('${viewerLink || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
+
+${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
+
 </td>
+
 <td>${c.cantitate ?? ""}</td>
+
 <td>
-<span class="status ${normalizeStatus(c.status)}"
+
+<span
+class="status ${normalizeStatus(c.status)}"
 onclick="editStatus(${c.id},'${c.status}')"
 id="badge_${c.id}">
+
 ${c.status ?? "Noua"}
+
 </span>
-<select id="status_${c.id}" style="display:none"
+
+<select
+id="status_${c.id}"
+style="display:none"
 onchange="changeStatus(${c.id})">
+
 <option value="Noua">Noua</option>
 <option value="InProgress">InProgress</option>
 <option value="Done">Done</option>
+
 </select>
+
 </td>
+
 <td>
-<input type="number" id="pret_${c.id}" value="${c.pret ?? ""}" style="width:90px">
+
+<input
+type="number"
+id="pret_${c.id}"
+value="${c.pret ?? ""}"
+style="width:90px"
+onchange="updateOrder('${c.id}')">
+
 </td>
+
 <td>
-<textarea id="coment_${c.id}" style="width:160px;height:45px">${c.coment ?? ""}</textarea>
+
+<textarea
+id="coment_${c.id}"
+style="width:160px;height:45px"
+onchange="updateOrder('${c.id}')">${c.coment ?? ""}</textarea>
+
+<div
+id="saved_${c.id}"
+class="autosave">
+</div>
+
 </td>
+
 <td>
-${hasFile ? `<button class="download-btn" onclick="window.open('${publicUrl}','_blank')">Descarcă</button>` : "-"}
+
+${hasFile
+? `<button class="download-btn"
+onclick="window.open('${publicUrl}','_blank')">
+Descarcă
+</button>`
+: "-"}
+
 </td>
-<td>
-<button class="save-btn" onclick="updateOrder('${c.id}')">💾</button>
-</td>
+
 </tr>
+
 `;
-    });
-    html += "</table>";
-    document.getElementById("lista").innerHTML = html;
+
+});
+
+html += "</table>";
+
+document.getElementById("lista").innerHTML = html;
 }
 
-/* ==================== FUNCȚIILE TALE ORIGINALE (NESCHIMBATE) ==================== */
 function editStatus(id,current){
-const badge=document.getElementById("badge_"+id);
-const select=document.getElementById("status_"+id);
+
+const badge =
+document.getElementById("badge_"+id);
+
+const select =
+document.getElementById("status_"+id);
+
 badge.style.display="none";
+
 select.style.display="inline-block";
+
 select.value=current || "Noua";
+
 select.focus();
 }
 
 async function changeStatus(id){
-const select=document.getElementById("status_"+id);
-const badge=document.getElementById("badge_"+id);
-let status=select.value;
-const { error } = await supabaseClient
-.from("comenzi")
-.update({ status: status })
-.eq("id", Number(id));
-if(error){
-console.error(error);
-alert("Eroare update");
-}else{
-badge.innerText=status;
-badge.className="status "+normalizeStatus(status);
-select.style.display="none";
-badge.style.display="inline-block";
-}
+
+const select =
+document.getElementById("status_"+id);
+
+const badge =
+document.getElementById("badge_"+id);
+
+let status = select.value;
+
+badge.innerText = status;
+
+badge.className =
+"status "+normalizeStatus(status);
+
+select.style.display = "none";
+
+badge.style.display = "inline-block";
+
+updateOrder(id);
 }
 
 function filterOrders(){
-const search=document.getElementById("search").value.toLowerCase();
-const status=document.getElementById("statusFilter").value;
-let filtered=allOrders.filter(o=>{
-const matchSearch=
-(o.client && o.client.toLowerCase().includes(search)) ||
-(o.produs && o.produs.toLowerCase().includes(search));
-const matchStatus=!status || o.status===status;
+
+const search =
+document.getElementById("search")
+.value.toLowerCase();
+
+const status =
+document.getElementById("statusFilter")
+.value;
+
+let filtered = allOrders.filter(o=>{
+
+const matchSearch =
+
+(o.client &&
+o.client.toLowerCase().includes(search))
+
+||
+
+(o.produs &&
+o.produs.toLowerCase().includes(search));
+
+const matchStatus =
+!status || o.status===status;
+
 return matchSearch && matchStatus;
+
 });
+
 renderOrders(filtered);
 }
 
 async function updateOrder(id){
-const select=document.getElementById("status_"+id);
-const badge=document.getElementById("badge_"+id);
-let status = (select.style.display==="inline-block")
+
+const select =
+document.getElementById("status_"+id);
+
+const badge =
+document.getElementById("badge_"+id);
+
+let status =
+
+(select.style.display==="inline-block")
 ? select.value
 : badge.innerText;
-let pret=document.getElementById("pret_"+id).value;
-let coment=document.getElementById("coment_"+id).value;
+
+let pret =
+document.getElementById("pret_"+id).value;
+
+let coment =
+document.getElementById("coment_"+id).value;
+
 if(pret==="") pret=null;
+
 if(coment==="") coment=null;
+
+const saved =
+document.getElementById("saved_"+id);
+
+saved.innerHTML = "💾 Salvare...";
+
 const { error } = await supabaseClient
 .from("comenzi")
 .update({
@@ -218,23 +454,39 @@ pret: pret,
 coment: coment
 })
 .eq("id", Number(id));
+
 if(error){
+
 console.error(error);
-alert("Eroare UPDATE");
+
+saved.innerHTML =
+"❌ Eroare";
+
 }else{
-alert("Salvat!");
-loadOrders();
+
+saved.innerHTML =
+"✅ Salvat automat";
+
+setTimeout(()=>{
+saved.innerHTML="";
+},2000);
+
 }
 }
 
-/* ====================== DESCHIDE 3D VIEWER ====================== */
-function open3DViewer(viewerLink, productName) {
-    if (!viewerLink) {
-        alert("Nu există link valid pentru vizualizare 3D!");
-        return;
-    }
-    window.open(viewerLink, '_blank');
+function open3DViewer(viewerLink, productName){
+
+if (!viewerLink){
+
+alert("Nu există link valid pentru vizualizare 3D!");
+
+return;
 }
+
+window.open(viewerLink, '_blank');
+}
+
 </script>
+
 </body>
 </html>
