@@ -1,11 +1,14 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Lista Comenzi</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
 body{
     margin:0;
     font-family:Segoe UI,sans-serif;
@@ -123,18 +126,26 @@ tr:hover{
     color:#16a34a;
     margin-top:4px;
 }
+
 </style>
 </head>
 
 <body>
 
 <div class="topbar">
-<div class="logo">📦 Sistem Comenzi</div>
 
-<button class="back-btn"
+<div class="logo">
+📦 Sistem Comenzi
+</div>
+
+<button
+class="back-btn"
 onclick="location.href='index.html'">
+
 ⬅ Înapoi
+
 </button>
+
 </div>
 
 <div class="container">
@@ -147,7 +158,8 @@ id="search"
 placeholder="Caută client / produs"
 onkeyup="filterOrders()">
 
-<select id="statusFilter"
+<select
+id="statusFilter"
 onchange="filterOrders()">
 
 <option value="">Toate</option>
@@ -156,6 +168,7 @@ onchange="filterOrders()">
 <option value="Done">Done</option>
 
 </select>
+
 </div>
 
 <div id="lista"></div>
@@ -183,12 +196,16 @@ async function loadOrders(){
     .order("data_comanda",{ascending:false});
 
     if(error){
-        console.error(error);
-        alert("Eroare la citirea comenzilor");
+
+        console.error("SUPABASE ERROR:", error);
+
+        alert(error.message);
+
         return;
     }
 
     allOrders = data || [];
+
     renderOrders(data);
 }
 
@@ -196,10 +213,12 @@ function formatDate(date){
 
     if(!date) return "-";
 
-    return new Date(date).toLocaleString("ro-RO");
+    return new Date(date)
+    .toLocaleString("ro-RO");
 }
 
 function normalizeStatus(status){
+
     return status || "Noua";
 }
 
@@ -233,6 +252,7 @@ let html = `
 <table>
 
 <tr>
+
 <th>Data</th>
 <th>Client</th>
 <th>Produs</th>
@@ -241,6 +261,7 @@ let html = `
 <th>Pret</th>
 <th>Coment</th>
 <th>Fisier</th>
+
 </tr>
 
 `;
@@ -262,18 +283,27 @@ html += `
 
 <tr>
 
-<td>${formatDate(c.data_comanda)}</td>
+<td>
+${formatDate(c.data_comanda)}
+</td>
 
-<td>${c.client ?? ""}</td>
+<td>
+${c.client ?? ""}
+</td>
 
-<td class="product-cell"
-ondblclick="open3DViewer('${viewerLink || ''}', '${(c.produs || '').replace(/'/g, "\\'")}')">
+<td
+class="product-cell"
+ondblclick="open3DViewer('${viewerLink || ''}')">
 
-${c.produs ?? ""} ${hasFile ? '👁️ 3D' : ''}
+${c.produs ?? ""}
+
+${hasFile ? ' 👁️ 3D' : ''}
 
 </td>
 
-<td>${c.cantitate ?? ""}</td>
+<td>
+${c.cantitate ?? ""}
+</td>
 
 <td>
 
@@ -327,9 +357,12 @@ class="autosave">
 <td>
 
 ${hasFile
-? `<button class="download-btn"
+? `<button
+class="download-btn"
 onclick="window.open('${publicUrl}','_blank')">
+
 Descarcă
+
 </button>`
 : "-"}
 
@@ -354,11 +387,11 @@ document.getElementById("badge_"+id);
 const select =
 document.getElementById("status_"+id);
 
-badge.style.display="none";
+badge.style.display = "none";
 
-select.style.display="inline-block";
+select.style.display = "inline-block";
 
-select.value=current || "Noua";
+select.value = current || "Noua";
 
 select.focus();
 }
@@ -376,7 +409,7 @@ let status = select.value;
 badge.innerText = status;
 
 badge.className =
-"status "+normalizeStatus(status);
+"status " + normalizeStatus(status);
 
 select.style.display = "none";
 
@@ -425,17 +458,22 @@ document.getElementById("status_"+id);
 const badge =
 document.getElementById("badge_"+id);
 
-let status =
+let status = "Noua";
 
-(select.style.display==="inline-block")
-? select.value
-: badge.innerText;
+if(select && select.style.display==="inline-block"){
+
+    status = select.value;
+
+}else if(badge){
+
+    status = badge.innerText;
+}
 
 let pret =
-document.getElementById("pret_"+id).value;
+document.getElementById("pret_"+id)?.value;
 
 let coment =
-document.getElementById("coment_"+id).value;
+document.getElementById("coment_"+id)?.value;
 
 if(pret==="") pret=null;
 
@@ -444,7 +482,9 @@ if(coment==="") coment=null;
 const saved =
 document.getElementById("saved_"+id);
 
-saved.innerHTML = "💾 Salvare...";
+if(saved){
+    saved.innerHTML = "💾 Salvare...";
+}
 
 const { error } = await supabaseClient
 .from("comenzi")
@@ -459,22 +499,31 @@ if(error){
 
 console.error(error);
 
-saved.innerHTML =
-"❌ Eroare";
+if(saved){
+
+saved.innerHTML = "❌ Eroare";
+
+}
 
 }else{
+
+if(saved){
 
 saved.innerHTML =
 "✅ Salvat automat";
 
 setTimeout(()=>{
+
 saved.innerHTML="";
+
 },2000);
 
 }
+
+}
 }
 
-function open3DViewer(viewerLink, productName){
+function open3DViewer(viewerLink){
 
 if (!viewerLink){
 
@@ -490,3 +539,4 @@ window.open(viewerLink, '_blank');
 
 </body>
 </html>
+```
