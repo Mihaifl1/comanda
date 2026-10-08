@@ -1,11 +1,8 @@
-```html
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Lista Comenzi</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 
@@ -130,7 +127,7 @@ tr:hover{
 </style>
 </head>
 
-<body>
+<body onload="checkUser(); loadOrders();">
 
 <div class="topbar">
 
@@ -140,7 +137,7 @@ tr:hover{
 
 <button
 class="back-btn"
-onclick="location.href='index.html'">
+onclick="location.href='dashboard.html'">
 
 ⬅ Înapoi
 
@@ -175,84 +172,54 @@ onchange="filterOrders()">
 
 </div>
 
+<script src="config.js"></script>
 <script>
-
-const supabaseClient = supabase.createClient(
-"https://kbbdsywnixtfmxrtwcus.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiYmRzeXduaXh0Zm14cnR3Y3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDQ5MTksImV4cCI6MjA4ODEyMDkxOX0.Uz4xGhxiZkcwVIrNnFwoWpiwnLW2L8HCXGd4toNv3Hc"
-);
 
 let allOrders = [];
 
-window.onload = () => {
-    loadOrders();
-};
+function esc(s){
+    if (s === null || s === undefined) return "";
+    return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#39;");
+}
 
 async function loadOrders(){
-
-    const {data,error} = await supabaseClient
-    .from("comenzi")
-    .select("*")
-    .order("data_comanda",{ascending:false});
-
-    if(error){
-
-        console.error("SUPABASE ERROR:", error);
-
-        alert(error.message);
-
-        return;
+    try {
+        const res = await fetch(API_BASE + "/list.php", {
+            headers: { "X-Token": authToken() }
+        });
+        if (res.status === 401) { clearToken(); location.href = "index.html"; return; }
+        const data = await res.json();
+        allOrders = data || [];
+        renderOrders(allOrders);
+    } catch (e) {
+        alert("Eroare la incarcare: " + e.message);
     }
-
-    allOrders = data || [];
-
-    renderOrders(data);
 }
 
 function formatDate(date){
-
     if(!date) return "-";
-
-    return new Date(date)
-    .toLocaleString("ro-RO");
+    return new Date(String(date).replace(" ","T")).toLocaleString("ro-RO");
 }
 
 function normalizeStatus(status){
-
     return status || "Noua";
 }
 
-function getPublicUrl(filePath){
-
-    if (!filePath) return null;
-
-    if (filePath.startsWith("http")) {
-        return filePath;
-    }
-
-    const { data } =
-    supabaseClient.storage
-    .from("comenzi")
-    .getPublicUrl(filePath);
-
-    return data.publicUrl;
-}
-
-function get3DViewerLink(fileUrl){
-
-    if (!fileUrl) return null;
-
-    return `https://3dviewer.net/#model=${fileUrl}`;
+function get3DViewerLink(url){
+    if (!url) return null;
+    return `https://3dviewer.net/#model=${url}`;
 }
 
 function renderOrders(data){
 
 let html = `
-
 <table>
-
 <tr>
-
 <th>Data</th>
 <th>Client</th>
 <th>Produs</th>
@@ -261,282 +228,128 @@ let html = `
 <th>Pret</th>
 <th>Coment</th>
 <th>Fisier</th>
-
 </tr>
-
 `;
 
 data.forEach(c => {
 
-const filePath =
-c.file_url || c.file_path || '';
-
-const publicUrl =
-getPublicUrl(filePath);
-
-const viewerLink =
-get3DViewerLink(publicUrl);
-
+const publicUrl = fileUrl(c.file_url || c.file_path || "");
+const viewerLink = get3DViewerLink(publicUrl);
 const hasFile = !!publicUrl;
 
 html += `
-
 <tr>
-
-<td>
-${formatDate(c.data_comanda)}
+<td>${formatDate(c.data_comanda)}</td>
+<td>${esc(c.client)}</td>
+<td class="product-cell" ondblclick="open3DViewer('${viewerLink || ''}')">
+${esc(c.produs)} ${hasFile ? ' 👁️ 3D' : ''}
 </td>
-
+<td>${esc(c.cantitate)}</td>
 <td>
-${c.client ?? ""}
-</td>
-
-<td
-class="product-cell"
-ondblclick="open3DViewer('${viewerLink || ''}')">
-
-${c.produs ?? ""}
-
-${hasFile ? ' 👁️ 3D' : ''}
-
-</td>
-
-<td>
-${c.cantitate ?? ""}
-</td>
-
-<td>
-
-<span
-class="status ${normalizeStatus(c.status)}"
-onclick="editStatus(${c.id},'${c.status}')"
-id="badge_${c.id}">
-
-${c.status ?? "Noua"}
-
+<span class="status ${normalizeStatus(c.status)}"
+      onclick="editStatus(${c.id})" id="badge_${c.id}">
+${esc(c.status ?? "Noua")}
 </span>
-
-<select
-id="status_${c.id}"
-style="display:none"
-onchange="changeStatus(${c.id})">
-
+<select id="status_${c.id}" style="display:none" onchange="changeStatus(${c.id})">
 <option value="Noua">Noua</option>
 <option value="InProgress">InProgress</option>
 <option value="Done">Done</option>
-
 </select>
-
 </td>
-
 <td>
-
-<input
-type="number"
-id="pret_${c.id}"
-value="${c.pret ?? ""}"
-style="width:90px"
-onchange="updateOrder('${c.id}')">
-
+<input type="number" id="pret_${c.id}" value="${esc(c.pret ?? '')}"
+       style="width:90px" onchange="updateOrder(${c.id})">
 </td>
-
 <td>
-
-<textarea
-id="coment_${c.id}"
-style="width:160px;height:45px"
-onchange="updateOrder('${c.id}')">${c.coment ?? ""}</textarea>
-
-<div
-id="saved_${c.id}"
-class="autosave">
-</div>
-
+<textarea id="coment_${c.id}" style="width:160px;height:45px"
+          onchange="updateOrder(${c.id})">${esc(c.coment ?? '')}</textarea>
+<div id="saved_${c.id}" class="autosave"></div>
 </td>
-
 <td>
-
 ${hasFile
-? `<button
-class="download-btn"
-onclick="window.open('${publicUrl}','_blank')">
-
-Descarcă
-
-</button>`
-: "-"}
-
+  ? `<button class="download-btn" onclick="window.open('${publicUrl}','_blank')">Descarcă</button>`
+  : "-"}
 </td>
-
 </tr>
-
 `;
 
 });
 
 html += "</table>";
-
 document.getElementById("lista").innerHTML = html;
 }
 
-function editStatus(id,current){
-
-const badge =
-document.getElementById("badge_"+id);
-
-const select =
-document.getElementById("status_"+id);
-
-badge.style.display = "none";
-
-select.style.display = "inline-block";
-
-select.value = current || "Noua";
-
-select.focus();
+function editStatus(id){
+    const badge = document.getElementById("badge_"+id);
+    const select = document.getElementById("status_"+id);
+    select.value = badge.innerText.trim() || "Noua";
+    badge.style.display = "none";
+    select.style.display = "inline-block";
+    select.focus();
 }
 
-async function changeStatus(id){
-
-const select =
-document.getElementById("status_"+id);
-
-const badge =
-document.getElementById("badge_"+id);
-
-let status = select.value;
-
-badge.innerText = status;
-
-badge.className =
-"status " + normalizeStatus(status);
-
-select.style.display = "none";
-
-badge.style.display = "inline-block";
-
-updateOrder(id);
+function changeStatus(id){
+    const select = document.getElementById("status_"+id);
+    const badge = document.getElementById("badge_"+id);
+    const status = select.value;
+    badge.innerText = status;
+    badge.className = "status " + normalizeStatus(status);
+    select.style.display = "none";
+    badge.style.display = "inline-block";
+    updateOrder(id);
 }
 
 function filterOrders(){
-
-const search =
-document.getElementById("search")
-.value.toLowerCase();
-
-const status =
-document.getElementById("statusFilter")
-.value;
-
-let filtered = allOrders.filter(o=>{
-
-const matchSearch =
-
-(o.client &&
-o.client.toLowerCase().includes(search))
-
-||
-
-(o.produs &&
-o.produs.toLowerCase().includes(search));
-
-const matchStatus =
-!status || o.status===status;
-
-return matchSearch && matchStatus;
-
-});
-
-renderOrders(filtered);
+    const search = document.getElementById("search").value.toLowerCase();
+    const status = document.getElementById("statusFilter").value;
+    const filtered = allOrders.filter(o => {
+        const matchSearch =
+            (o.client && o.client.toLowerCase().includes(search)) ||
+            (o.produs && o.produs.toLowerCase().includes(search));
+        const matchStatus = !status || o.status === status;
+        return matchSearch && matchStatus;
+    });
+    renderOrders(filtered);
 }
 
 async function updateOrder(id){
+    const select = document.getElementById("status_"+id);
+    const badge = document.getElementById("badge_"+id);
+    let status = "Noua";
+    if (select && select.style.display === "inline-block") status = select.value;
+    else if (badge) status = badge.innerText.trim();
 
-const select =
-document.getElementById("status_"+id);
+    let pret = document.getElementById("pret_"+id)?.value;
+    let coment = document.getElementById("coment_"+id)?.value;
+    if (pret === "") pret = null;
+    if (coment === "") coment = null;
 
-const badge =
-document.getElementById("badge_"+id);
+    const saved = document.getElementById("saved_"+id);
+    if (saved) saved.innerHTML = "💾 Salvare...";
 
-let status = "Noua";
-
-if(select && select.style.display==="inline-block"){
-
-    status = select.value;
-
-}else if(badge){
-
-    status = badge.innerText;
-}
-
-let pret =
-document.getElementById("pret_"+id)?.value;
-
-let coment =
-document.getElementById("coment_"+id)?.value;
-
-if(pret==="") pret=null;
-
-if(coment==="") coment=null;
-
-const saved =
-document.getElementById("saved_"+id);
-
-if(saved){
-    saved.innerHTML = "💾 Salvare...";
-}
-
-const { error } = await supabaseClient
-.from("comenzi")
-.update({
-status: status,
-pret: pret,
-coment: coment
-})
-.eq("id", Number(id));
-
-if(error){
-
-console.error(error);
-
-if(saved){
-
-saved.innerHTML = "❌ Eroare";
-
-}
-
-}else{
-
-if(saved){
-
-saved.innerHTML =
-"✅ Salvat automat";
-
-setTimeout(()=>{
-
-saved.innerHTML="";
-
-},2000);
-
-}
-
-}
+    try {
+        const res = await fetch(API_BASE + "/update.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Token": authToken() },
+            body: JSON.stringify({ id: Number(id), status, pret, coment })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "eroare");
+        if (saved) {
+            saved.innerHTML = "✅ Salvat automat";
+            setTimeout(() => (saved.innerHTML = ""), 2000);
+        }
+    } catch (e) {
+        if (saved) saved.innerHTML = "❌ Eroare";
+    }
 }
 
 function open3DViewer(viewerLink){
-
-if (!viewerLink){
-
-alert("Nu există link valid pentru vizualizare 3D!");
-
-return;
-}
-
-window.open(viewerLink, '_blank');
+    if (!viewerLink) { alert("Nu există link valid pentru vizualizare 3D!"); return; }
+    window.open(viewerLink, '_blank');
 }
 
 </script>
 
 </body>
 </html>
-```
