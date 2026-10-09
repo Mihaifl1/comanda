@@ -1,6 +1,6 @@
 // Configurare backend (server propriu pe Raspberry Pi, prin tunel HTTPS).
 // Dupa ce pornim tunelul Cloudflare, inlocuieste doar valoarea de mai jos.
-const BASE = "https://classroom-jacob-scenario-videos.trycloudflare.com/comanda";
+const BASE = "https://excerpt-zip-eastern-classifieds.trycloudflare.com/comanda";
 
 const API_BASE = BASE + "/api";
 const FILES_BASE = BASE + "/files";
