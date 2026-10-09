@@ -74,3 +74,36 @@ async function saveOrder() {
     alert("❌ Eroare:\n" + err.message);
   }
 }
+
+//////////////////////////////////////////////////
+// INREGISTRARE CONT NOU
+//////////////////////////////////////////////////
+async function registerUser() {
+  const user = document.getElementById("reg_user").value.trim();
+  const pass = document.getElementById("reg_pass").value;
+  const pass2 = document.getElementById("reg_pass2").value;
+  const msg = document.getElementById("reg_msg");
+
+  if (pass !== pass2) {
+    msg.style.color = "#c0392b";
+    msg.innerText = "Parolele nu coincid.";
+    return;
+  }
+
+  try {
+    const res = await fetch(API_BASE + "/register.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user, pass })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || "eroare");
+
+    msg.style.color = "#16a34a";
+    msg.innerText = "✅ Cont creat! Te poți autentifica.";
+    setTimeout(() => (window.location.href = "index.html"), 1200);
+  } catch (e) {
+    msg.style.color = "#c0392b";
+    msg.innerText = "❌ " + e.message;
+  }
+}
